@@ -36,8 +36,8 @@ macros:宏
 
 output:
 ```cpp
-std::ostream cout;//cout定义，命名空间（防重名）::变量类型 变量;
-cout << "Hello." << endl;// 
+std::ostream cout;//cout定义，命名空间（防重名）
+//命名空间::变量类型 变量;
 ```
 `<<` `>>`:运算符，函数 << 参数
 函数调用函数的返回值依然是cout，所以可以链式调用
@@ -497,7 +497,7 @@ strlen(rabbit)=5//not include '\0'
 2:116(t)
 3:101(e)
 4:114(r)
-5:0()//"\0"
+5:0()//'\0'
 6:0()
 7:0()
 8:0()
@@ -590,4 +590,191 @@ std::u16string//C++11
 std::u32string//C++11
 ```
 
-### structures unions and enumerations
+### structures,unions and enumerations
+
+#### struct
+
+`struct`:结构体
+a `struct` is a type consisting of a sequence of members
+the members are allocated in an ordered sequence
+
+```cpp
+struct Student{
+    char name[4];
+    int born;
+    bool male;
+};//don't forget
+
+struct Student stu;//define
+strcpy(stu.name,"Yu");
+stu.born = 2000;//assign values
+stu.male = true;
+
+struct Student stu2 = {"Yu",2000,true};//initialization
+
+struct Student stu3[100];
+stu3[50].born = 2002;
+```
+stu/stu2 in memory:
+|element|value|addresss|
+|---|---|---|
+||...|...|
+|male|1|p+8|
+|bore|2000|p+4~p+7|
+|name|0|p+3|
+|^|0|p+2|
+|^|'u'|p+1|
+|^|'Y'|p+0|
+||...|...|
+
+in order to align the data in memory,some empty bytes will be padded
+
+```cpp
+struct Stu1{
+    int id;//4B
+    bool male;//1B
+    char label;//1B
+    float weight;//4B
+};
+struct Stu2{
+    int id;//4B
+    bool male;//1B
+    float weight;//4B
+    char label;//1B
+};
+cout << sizeof(struct Stu1) << endl;//12
+cout << sizeof(struct Stu2) << endl;//16
+//`sizeof(Stu)` is available in C++
+```
+the way Stu1 and Stu2 stored in memory:
+![](media/QQ20250628-141356.png)
+the address of each element is multiples of 4
+
+struct and class in C++ are very similar
+
+#### union
+
+`union`:联合体
+```cpp
+union ipv4addr{
+    std::uint32_t address32;
+    std::uint8_t address8[4];
+};
+//sizeof(union ipv4addr) is 4
+```
+ipv4addr stored in memory:
+![](media/QQ20250628-160211.png)
+`union` elements stored in same address together
+
+```cpp
+union ipv4addr ip;
+cout << "sizeof(ip)=" << sizeof(ip) << endl;//sizeof(ip)=4
+ip.address8[3] = 127;
+ip.address8[2] = 0;
+ip.address8[1] = 0;
+ip.address8[0] = 1;
+cout << "The address is "
+     << static_cast<int>(ip.address8[3]) << "."
+     << static_cast<int>(ip.address8[2]) << "."
+     << static_cast<int>(ip.address8[1]) << "."
+     << static_cast<int>(ip.address8[0]) << endl;
+    //用static_cast<int>来转换每个字节，确保输出为整数
+cout << std::hex;
+cout << "in hex " << ip.address32 << endl;
+```
+result:
+```sh
+sizeof(ip)=4
+the address is 127.0.0.1
+in hex 7f000001
+```
+
+#### enum
+
+`enum`:枚举
+`enum` also makes a new type
+const for creating symbolic constants
+its members are integers,but can't be operands in arithmetic expressions
+```cpp
+enum color {WHITE,BLACK,RED,GREEN,BLUE,YELLOW,NUM_COLORS}
+//WHITE=0,BLACK=1,RED=2...NUM_COLORS=6
+enum color pen_color = RED;
+pen_color = color(3);//3(GREEN)
+cout << "we have" << NUM_COLORS << "pens" << endl;
+
+pen_color += 1;//error!
+int color_index = pen_color;
+color_index += 1;//correct
+```
+
+#### an example with struct,union,enum
+
+```cpp
+enum datatype {TYPE_INT8=1,TYPE_INT16=2,TYPE_INT32=4,TYPE_INT64=8};
+struct Point{
+    enum datatype type;
+    union{
+        std::int8_t data8[3];
+        std::int16_t data16[3];
+        std::int32_t data32[3];
+        std::int64_t data64[3];
+    };
+};
+
+size_t datawidth(struct Point pt)
+{
+    return size_t(pt.type)*3;
+}
+
+int64_t l1norm(struct Point pt)
+{
+    int64_t result = 0;
+    switch(pt.type)
+    {
+        case (TYPE_INT8):
+            result = abs(pt.data8[0])+abs(pt.data8[1])+abs(pt.data8[2]);
+            break;
+        ...
+    }
+}
+```
+
+### typedef
+
+`typedef`can create an alias for a type
+can be used to replace a possibly complex type name
+
+```cpp
+typedef int myint;
+myint num = 1;
+
+typedef unsigned char vec3b[3];
+vec3b color = {255,0,0};
+
+typedef struct _rgb_struct{
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
+}rgb_struct;
+rgb_struct rgb = {0,0,255};
+```
+
+typical `typedef` usages:
+```cpp
+//_uint8_t.h
+#ifndef _UINI8_T
+#define _UINT8_T
+typedef unsigned char uint8_t;
+#endif /* _UINT8_T */
+```
+```cpp
+#if defined(_LP64)
+typedef int wchar_t;
+#else
+typedef long wchar_t;
+#endif
+```
+
+## Memory and Pointer
+
+### pointers
