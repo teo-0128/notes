@@ -778,3 +778,209 @@ typedef long wchar_t;
 ## Memory and Pointer
 
 ### pointers
+
+what stored in a pointer variable is an address
+operator `&` can take the address of an object or a variable of fundamental types
+operator `*` can take the content that the pointer points to
+
+```cpp
+int num = 10;
+int * p1 = NULL, * p2 = NULL;//declare two pointers
+cout << "num = " << num << endl;//num = 10
+
+p1 = &num;//take the address of num,assign to p1
+p2 = &num;//take the address of num,assign to p2
+cout << "num = " << num << endl;//num = 20
+
+*p1 = 20;//assign 20 to num
+*p2 = 30;//assign 30 to num
+cout << "*p2 = " << *p2 << endl;//num = 30
+```
+how pointers work:
+![](media/QQ20250629-210155.png)
+
+```cpp
+struct Student
+{
+    char name[4];
+    int born;
+    bool male;
+};
+
+Student stu = {"Yu",2000,true};
+Student * pStu = &stu;
+strncpy(pStu->name,"Li",4);
+//char *strncpy(char *dest, const char *src, size_t n);
+
+/*
+p->member;
+    or
+(*p).member;//() is necessary
+*/
+pStu->born = 2001;//(*pStu).born = 2001;
+pStu->male = false;//(*pStu).male = false;
+```
+in memory:
+![](media/QQ20250701-164002.png)
+↓↓↓
+![](media/QQ20250701-164229.png)
+
+print out the addresses of pointers:
+```c
+//C style
+printf("address of stu:%p\n",pStu);
+```
+```cpp
+//C++ style
+cout << "address of stu:" << pStu <<endl;
+cout << "address of stu:" << &stu <<endl;
+
+cout << "address of member name:" << &(pStu->name) <<endl;//same with pStu
+cout << "address of member born:" << &(pStu->born) <<endl;//pStu+4
+
+cout << "sizeof(pStu) = " << sizeof(pStu) << endl;
+//the address should be an unsigned 32-bit or 64-bit integer
+```
+
+pointers of pointers:
+```cpp
+int num = 10;
+int * p = &num;
+int ** pp = &p;
+*(*pp) = 20;
+cout << "num = " << num << endl;//num = 20
+```
+
+constant pointers:
+```cpp
+int num = 1;
+int another = 2;
+const int * p1 = &num;
+*p1 = 3;//error
+num = 3;//okay
+//can't change the value p1 points to through p1
+
+int * const p2 = &num;
+*p2 = 3;//okay
+p2 = &another;//error
+//p2 can't point to another address any more
+
+const int * const p3 = &num;
+//can't change either of them
+```
+```cpp
+int foo(const char * p)
+//the value p points to can't be changed
+{
+    char * p2 = p;//syntax error
+    const char * p2 = p;//correct
+    //...
+    return 0;
+}
+```
+
+### pointers and arrays
+
+can consider an array as a pointer:
+
+```c
+typedef struct 
+{
+    char name[4];
+    int born;
+    bool male;
+}Student;//1*4+4+(1+3)=12
+
+Student students[128];
+printf("students = %p\n",students);
+printf("&students = %p\n",&students);
+printf("&students[0] = %p\n",&students[0]);
+printf("&students[1] = %p\n",&students[1]);
+printf("&students[2] = %p\n",&students[2]);
+
+
+Student * p = students;
+p[0].born = 2000;
+p[1].born = 2001;
+p[2].born = 2002;
+
+printf("students[0].born = %d\n",students[0].born);
+printf("students[1].born = %d\n",students[1].born);
+printf("students[2].born = %d\n",students[2].born);
+```
+result:
+```sh
+students = 0x7ffc92ba8ed0
+&students = 0x7ffc92ba8ed0
+&students[0] = 0x7ffc92ba8ed0
+&students[1] = 0x7ffc92ba8edc
+&students[2] = 0x7ffc92ba8ee8
+students[0].born = 2000
+students[1].born = 2001
+students[2].born = 2002
+```
+
+`p + num`or`num + p`points to the num-th element of the array p,not byte
+```cpp
+int numbers[4] = {0, 1, 2, 3};
+int *p = numbers + 1;//// points to value 1
+p++;           // points to value 2
+*p = 20;       // change 2 to 20
+*(p - 1) = 10; // change 1 to 10
+p[1] = 30;     // change 3 to 30
+for (int i = 0; i < 4; i++)
+{
+    cout << "numbers[" << i << "]= " << numbers[i] << endl;
+}
+cout << "numbers = " << numbers << endl;
+cout << "p - 1 = " << p - 1 << endl;
+cout << "p = " << p << endl;
+```
+result:
+```sh
+numbers[0]= 0
+numbers[1]= 10
+numbers[2]= 20
+numbers[3]= 30
+numbers = 0x7ffda0e00c90
+p - 1 = 0x7ffdc4bcaba4
+p = 0x7ffda0e00c98
+```
+
+equivalent ways to initialize a integer:
+```cpp
+int i = 1;
+int * i = 1;
+
+p[i] = 3;
+*(p + i) = 3;
+
+int * p2 = p + i;
+*p2 = 3;
+```
+avoid being out of bound:
+```cpp
+int num = 0;
+int * p = &num;
+p[-1] = 2;//out of bound
+p[0] = 3;//okay
+*(p+1) = 4;//out of bound
+```
+
+differences between a pointer and an array:
+array is a constant pointer
+`sizeof` gets the total size of all elements in an array
+`sizeof` operator to a pointer will return the size of the address(4 or 8,depends on 32-bit or 64-bit)
+```cpp
+int num[4] = {0,1,2,3};
+int * p = num;
+cout << sizeof(num) << endl;////4*sizeof(int)
+cout << sizeof(p) << endl;//4 or 8
+cout << sizeof(double *) << endl;//4 or 8
+```
+
+### allocate memory
+
+#### allocate memory:C style
+
+#### allocate memory:CPP style
