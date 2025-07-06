@@ -219,7 +219,9 @@ public Dog maxDog(Dog d2){
 Dog larger = dog1.maxDog(dog2); //an object invokes the method
 ```
 
-### 3. Lists:References,Recursion and Lists
+### 3. Lists I
+
+#### reference type
 
 ```java
 int x = 5;
@@ -239,23 +241,113 @@ System.out.println(a);//weight:5,tusk size:8.30
 System.out.println(b);//weight:5,tusk size:8.30
 ```
 
-computers store information in memory,like integer 72 stored as 01001000,character H also stored as 01001000 according to ASCII
-8 primitive types in Java:`byte``shore``int``long``float``double``boolean``char`
-everything else,including arrays,is a "reference type"(引用类型)
-when an Object is instantiated(e.g.Dog,Walrus),
-1. java first allocates a box of bits for each instance variable of the class and fills them with a default value(e.g.0,null)
+- computers store information in memory,like integer 72 stored as 01001000,character H also stored as 01001000 according to ASCII
+- 8 primitive types in java:`byte``shore``int``long``float``double``boolean``char`
+- everything else,including arrays,is a "reference type"(引用类型)
+
+1. when an Object is instantiated(e.g.Dog,Walrus),java first allocates a box of bits for each instance variable of the class and fills them with a default value(e.g.0,null)
 2. the constructor then usually fills every such box with some other value
 
 ```java
 new Walrus(1000,8.3);
 ```
-3. can think of `new` as returning the address of the newly created object
-4. for example, if the object is created in memory location 1234567890,then `new` returns 1234567890
+3. can think of `new` as returning the address of the newly created object.for example, if the object is created in memory location 1234567890,then `new` returns 1234567890
 
 ```java
 Walrus someWalrus;
 someWalrus = null;
 ```
 
-5. addresses in java are 64 bits,these bits can be either set to null or the 64 bits "address" of a specific instance of that class(return by `new`)
+4. addresses in java are 64 bits,these bits can be either set to null or the 64 bits "address" of a specific instance of that class(return by `new`)
 
+#### arrays
+
+```java
+Planet p = new Planet(0,0,0,0,0,"blah.png");
+int[] x = new int[]{0,1,2,95,4};//declaration,instantiation and assignment
+```
+arrays are also objects,objects are usually instantiated using the `new` keyword
+
+```java
+int[] a;//declaration
+```
+- declaretion creates a 64 bit box intended only for storing a reference to an int array
+- no object is instantiateds
+
+```java
+new int[]{0,1,2,95,4};
+```
+- instantiates a new object,in this case an int array
+- object is anonymous essentially in java
+
+#### lists
+
+```java
+public class IntList {
+    public int first;
+    public IntList rest;
+
+    public static void main(String[] args) {
+        IntList L = new IntList();
+        L.first = 5;
+        L.rest = new IntList();
+        L.rest.first = 10;
+        L.rest.rest = new IntList();
+        L.rest.rest.first = 15;
+    }
+}
+```
+a.k.a
+```java
+public class IntList {
+    public int first;
+    public IntList rest;
+    public IntList(int f, IntList r) {
+        first = f;
+        rest = r;
+    }
+
+    public static void main(String[] args) {
+        IntList L = new IntList(15,null);
+        L = new IntList(10,L);//recursion
+        L = new IntList(5,L);
+    }
+}
+```
+↓↓↓
+[5] -> [10] -> [15] -> null
+![](media/QQ20250706-123754.png)
+
+how to count the size of the list:
+```java
+public int size(){
+    if(rest == null){
+        return 1;
+    }
+    return 1 + rest.size();//recursion
+}
+```
+or
+```java
+public int interativeSize(){
+    int totalSize = 0;
+    IntList p = this;//this:a reference to the current object
+    while(p != null){
+        totalSize += 1; 
+        p = p.rest;
+    }
+    return totalSize;
+}
+```
+
+write a get method through recursion:
+```java
+public int get(int i){
+    if(i == 0){
+        return first;
+    }
+    return rest.get(i - 1);
+}
+```
+
+### 4. Lists II
