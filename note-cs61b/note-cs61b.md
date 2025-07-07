@@ -242,8 +242,8 @@ System.out.println(b);//weight:5,tusk size:8.30
 ```
 
 - computers store information in memory,like integer 72 stored as 01001000,character H also stored as 01001000 according to ASCII
-- 8 primitive types in java:`byte``shore``int``long``float``double``boolean``char`
-- everything else,including arrays,is a "reference type"(引用类型)
+- 8 primitive types in java:`byte` `shore` `int` `long` `float` `double` `boolean` `char`
+- everything else,including arrays and `String`,are "reference type"(引用类型)
 
 1. when an Object is instantiated(e.g.Dog,Walrus),java first allocates a box of bits for each instance variable of the class and fills them with a default value(e.g.0,null)
 2. the constructor then usually fills every such box with some other value
@@ -297,7 +297,7 @@ public class IntList {
     }
 }
 ```
-a.k.a
+or
 ```java
 public class IntList {
     public int first;
@@ -315,7 +315,7 @@ public class IntList {
 }
 ```
 ↓↓↓
-[5] -> [10] -> [15] -> null
+`[5] -> [10] -> [15] -> null`
 ![](media/QQ20250706-123754.png)
 
 how to count the size of the list:
@@ -334,7 +334,7 @@ public int interativeSize(){
     IntList p = this;//this:a reference to the current object
     while(p != null){
         totalSize += 1; 
-        p = p.rest;
+        p = p.rest;//iteration
     }
     return totalSize;
 }
@@ -351,3 +351,241 @@ public int get(int i){
 ```
 
 ### 4. Lists II
+
+#### SLList
+
+a more proper way:
+```java
+public class IntNode{
+    public int item;
+    public IntNode next;
+    public IntNode(int i,IntNode n){
+        item = i;
+        next = n;
+    }
+}//IntNode is dumb now,has no methods 
+```
+↓↓↓can also be nested in SLList(`private static class IntNode{...}`)
+```java
+public class SLList{
+    //use `private` keyword to hide implementation details from users of the class
+    private IntNode first;
+    //creates a new SLList with one item,namely x
+    public SLList(int x){
+        first = new IntNode(x,null);
+    }
+    //add item x to the front of the list
+    public void addFirst(int x){
+        first = new IntNode(x,first);
+    }
+    //get the first item in the list
+    public int getFirst(){
+        return first.item;
+    }
+
+    public static void main(String[] args){
+        SLList L = new SLList(5);
+        L.addFirst(10);
+        L.addFirst(15);
+        System.out.println(L.getFirst());//15
+    }
+}
+```
+
+![](media/QQ20250707-130714.png)
+
+the `private` prevent code like:
+```java
+SLList L = new SLList(5);
+L.first = null;//directly disturb the structure of the linked list
+System.out.println(L.getFirst());//NullPointerException!
+```
+or
+```java
+L.first.next = new IntNode(999, null);//bypass the addFirst method and directly tamper with the linked list structure
+```
+
+hide implementation details from users of the class,
+1. less for user of class to understand
+2. safe for you to change private implementation
+3. still nothing to do with protection against hackers,spies and other evil entities
+
+#### more methods for SLList
+
+create addLast and size method for SLList:
+```java
+//add x to the end of the list
+public void addLast(int x){
+    IntNode p = first;
+    while(p.next != null){
+        p = p.next;//iteration
+    }
+    p.next = new IntNode(x,null);
+}
+
+//return the size of the list
+public int size(){
+    return size(first);
+}
+
+//return the size of the list,starting at IntNode p
+private int size(IntNode p){
+    if(p.next == null){
+        return 1;
+    }
+    return 1 + size(p.next);
+}
+
+/*
+//or
+public int size() {
+    if (first == null) return 0;
+    return 1 + size(first.next);
+}//poor readability
+*/
+```
+
+#### faster size()
+
+```java
+public class SLList{
+    private IntNode first;
+
+    //...
+
+    private int size(IntNode p){
+        if(p.next == null){
+            return 1;
+        }
+        return 1 + size(p.next);
+    }
+
+    public int size(){
+        return siez(first);
+    }
+}
+```
+↓↓↓
+```java
+public class SLList {
+    private IntNode first;
+    private int size;//all S lists have a size
+
+    public SLList(int x) {
+        first = new IntNode(x, null);
+        size = 1;//size is 1
+    }
+
+    public void addFirst(int x) {
+        first = new IntNode(x, first);
+        size += 1;//size grow by 1
+    }
+
+    public int getFirst() {
+        return first.item;
+    }
+
+    public void addLast(int x){
+        IntNode p = first;
+        while(p.next != null){
+            p = p.next;
+        }
+        p = new IntNode(x,null);
+        size += 1;//size grow by 1
+    }
+
+    public int size(){
+        return size;
+    }
+```
+
+- the solution is maintaining a special size variable that caches the size of the list
+- caching:putting aside data to speed up retrieval,use a bit of extra memory in exchange for getting faster size()
+
+#### empty list
+
+- benefits of SLList vs. IniList so far:
+  1. faster size() method than would have been convenient for IntList
+  2. User of an SLList never sees the IntList class
+- also it's easy to represent the empty list by setting first to null
+- in the above code there's a subtle bug,it crashes then calling addLast on the empty list:
+    ```java
+    public void addLast(int x){
+        IntNode p = first;
+        while(p.next != null){
+            p = p.next;
+        }
+        p = new IntNode(x,null);
+        size += 1;
+    }
+    ```
+    can't ask the null-th item for its next element like `null.next`
+    so change to:
+    ```java
+    public void addLast(int x){
+        size += 1;
+        if(first == null){
+        p = new IntNode(x,null);
+        return;
+    }
+        IntNode p = first;
+        while(p.next != null){
+            p = p.next;
+        }
+        p = new IntNode(x,null);
+        
+    }
+    ```
+
+how to make all SLLists(even empty) consistant of consistency:
+![](media/QQ20250707-174138.png)
+```java
+public class SLList {
+    //the first item,if it exists,is at sentinel.next
+    private IntNode sentinel;
+    private int size;
+
+    public SLList(int x) {
+        sentinel = new IntNode(0,null);
+        sentinel.next = new IntNode(x, null);
+        size = 1;
+    }
+
+    //create an empty SLList
+    public SLList(){
+        sentinel = new IntNode(0,null);
+        size = 0;
+    }
+
+    public void addFirst(int x) {
+        sentinel.next = new IntNode(x, sentinel.next);
+        size += 1;
+    }
+
+    public int getFirst() {
+        return sentinel.next.item;
+    }
+
+    public void addLast(int x){
+        size += 1;
+        IntNode p = sentinel;
+        while(p.next != null){
+            p = p.next;
+        }
+        p.next = new IntNode(x,null);
+    }
+
+    public int size(){
+        return size;
+    }
+```
+- an invariant is a condition that is guaranteed to be true during code execution(assuming there are no bugs in the code)
+- an SLList with a sentinel node has at least the following invariants:
+  1. the sentinel reference always points to the sentinel node
+  2. the first node(if exists) is always at sentinel.next
+  3. the size variable is always the total number of items that have been added
+- invariants make it easier to reason about code:
+  1. can assume they are true to simplify code(e.g. addLast doesn't need to worry about nulls)
+  2. must ensure that methods preserve invariants
+
+### 5. Lists III
