@@ -260,7 +260,9 @@ someWalrus = null;
 
 4. addresses in java are 64 bits,these bits can be either set to null or the 64 bits "address" of a specific instance of that class(return by `new`)
 
-#### arrays
+![](media/QQ20250708-194424.png)
+
+#### array
 
 ```java
 Planet p = new Planet(0,0,0,0,0,"blah.png");
@@ -352,7 +354,7 @@ public int get(int i){
 
 ### 4. Lists II
 
-#### SLList
+#### Singly Linked List
 
 a more proper way:
 ```java
@@ -540,12 +542,12 @@ public class SLList {
 how to make all SLLists(even empty) consistant of consistency:
 ![](media/QQ20250707-174138.png)
 ```java
-public class SLList {
+public class SLList{
     //the first item,if it exists,is at sentinel.next
     private IntNode sentinel;
     private int size;
 
-    public SLList(int x) {
+    public SLList(int x){
         sentinel = new IntNode(0,null);
         sentinel.next = new IntNode(x, null);
         size = 1;
@@ -557,12 +559,12 @@ public class SLList {
         size = 0;
     }
 
-    public void addFirst(int x) {
+    public void addFirst(int x){
         sentinel.next = new IntNode(x, sentinel.next);
         size += 1;
     }
 
-    public int getFirst() {
+    public int getFirst(){
         return sentinel.next.item;
     }
 
@@ -589,3 +591,112 @@ public class SLList {
   2. must ensure that methods preserve invariants
 
 ### 5. Lists III
+
+#### Doubly Linked List and Circular Linked List
+
+inserting at the back of an SLList is much slower than the front,how to make them almost fast?
+1. add backwards links from every node
+2. this yields a "doubly linked list" or DLList,as opposed to out earlier "singly linked list" or SLList
+
+![](media/QQ20250708-151934.png)
+- arrows point at entire node,not fields
+e.g. last holds the address of the last node,not the item field of the sentinel node
+- last sometimes points at the sentinel,and sometimes points at a "real" node,one solution is having two sentinels,another solution is let last points to sentinel 
+  
+![](media/QQ20250708-154440.png)
+
+#### generics 
+
+generics(泛型) allow developers to define type-safe classes, interfaces, and methods with type parameters
+the core idea of generics is to parameterize data types, enabling the same code logic to work with different data types without duplication
+
+```java
+public class SLList<BleepBlorp>{
+    private IntNode sentinel;
+    private int size;
+    public class IntNode{
+        public BleepBlorp item;
+        public IntNode next;
+        ...
+    }
+    ...
+}
+```
+- in java file implementing your data structure,specify your "generic type" only once at the very top of the file
+- in java files that use your data structure,
+  1. write out desired type during declaration
+  2. use the empty `<>` during instantiation
+```java
+SLList<Intger> s1 = new SLList<>(5);
+s1.addFirst(10);
+SLList<String> s2 = new SLList<>("hi");
+s2.addFirst("apple");
+//int:Integer double:Double char:Character boolean:Boolean long:Long
+```
+
+#### array again
+
+- arrays are a special kind of object which consists of a numbered sequence of
+memory boxes
+- to get ith item of array A, use A[i]
+- unlike class instances which have have named memory boxes
+- arrays consist of:
+  1. a fixed iteger length(can't change)
+  2. a sequence of N memory boxes where N=length,such thay:
+    - all of the boxes hold the same type of value(and have same # of bits)
+    - the boxes are numbered 0 through length-1
+- like instances of classes:
+  - you get one reference when it's created
+  - if you reassign all variables containing that reference,you can never get the array back
+- unlike classes,arrays don't have methods 
+```java
+x = new int[3];
+y = new int[]{1,2,3,4,5};
+int[] z = {6,7,8,9,10};
+```
+
+![](media/QQ20250708-202904.png)
+
+unlike C standard,the second position of 2d array in java is not necessary,a 2d array in java is not a contiguous memory space,it is an irregular (jagged) structure,meaning each row can have a different length:
+```java
+int[][] pascalsTriangle;//array of int array references
+pascalsTriangle = new int[4][];//create four boxes,each can store an int array reference
+int[] rowZero = pascalsTriangle[0];
+
+pascalsTriangle[0] = new int[]{1};
+pascalsTriangle[1] = new int[]{1,1};
+//↓create a new array with 3 boxes,storing 1,2,1 respectively
+//↓store a reference to this array in pascalsTriangle box #2
+pascalsTriangle[2] = new int[]{1,2,1};
+pascalsTriangle[3] = new int[]{1,3,3,1};
+/*
+pascalsTriangle → [
+    [1],
+    [1, 1],
+    [1, 2, 1],
+    [1, 3, 3, 1]
+]
+*/
+int[] rowTwo = pascalsTriangle[2];
+rowTwo[1] = -5;
+/*
+pascalsTriangle → [
+    [1],
+    [1, 1],
+    [1, -5, 1],
+    [1, 3, 3, 1]
+]
+*/
+
+int[][] matrix;
+matrix = new int[4][];//create 1 total array
+matrix = new int[4][4];//create 5 total arrays
+
+int[][] pascalAgain = new int[][]{{1},{1,1},{1,2,1},{1,3,3,1}}
+```
+
+![](media/QQ20250708-213233.png)
+
+arrays indices can be computed at runtime,class member variable names can't be computed and used at runtime
+
+### 6.
