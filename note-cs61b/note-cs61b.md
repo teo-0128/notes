@@ -506,7 +506,7 @@ public class SLList {
 
 #### empty list
 
-- benefits of SLList vs. IniList so far:
+- benefits of SLList vs. IntList so far:
   1. faster size() method than would have been convenient for IntList
   2. User of an SLList never sees the IntList class
 - also it's easy to represent the empty list by setting first to null
@@ -699,4 +699,59 @@ int[][] pascalAgain = new int[][]{{1},{1,1},{1,2,1},{1,3,3,1}}
 
 arrays indices can be computed at runtime,class member variable names can't be computed and used at runtime
 
-### 6.
+### 6. Test
+
+the most natural approach to testing would be to start with an input and expected result
+```java
+public class TestSort{
+    public static void testSort(){
+        String[] input = {"AA", "BB", "CC", "DD"};
+        String[] expected = {"AA","BB","CC","DD"};
+        ...
+    }
+    public static void main(String[] args){
+        testSort(); 
+    }
+}
+```
+this is the most primitive method,which is annoying and thankless
+`org.junit` library provides many useful methods for simplifying coding
+```xml
+<dependencies>
+<!--JUnit5 unit testing framework-->
+    <dependency>
+    <!--allow IDEs or build tools (such as Maven or Gradle) to discover and execute tests programmatically-->
+        <groupId>org.junit.platform</groupId>
+        <artifactId>junit-platform-launcher</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+    <!--responsible for executing tests written using the JUnit Jupiter API-->
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+    <!--test cases for compatibility and operation with both JUnit 3 and JUnit 4-->
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+```
+```java
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@Test
+void testAddition() {
+    Calculator calculator = new Calculator();
+    int result = calculator.add(2, 3);
+    assertEquals(5, result);
+}
+```
+
+just look at
+[Junit5 架构、新特性及基本使用（常用注解与套件执行） - 知乎](https://zhuanlan.zhihu.com/p/161623597)
+
+### 7. 
