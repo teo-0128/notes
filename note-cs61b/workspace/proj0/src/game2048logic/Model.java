@@ -130,10 +130,12 @@ public class Model {
 
         for(int x = 0;x < size()-1;x++){
             for(int y = 0;y < size()-1;y++){
-                if(tile(x,y).value() == tile(x+1,y).value() ||
+                if(
+                        tile(x,y).value() == tile(x+1,y).value() ||
                         tile(x,y).value() == tile(x,y+1).value() ||
                         tile(x+1,y+1).value() == tile(x+1,y).value() ||
-                        tile(x+1,y+1).value() == tile(x,y+1).value()){
+                        tile(x+1,y+1).value() == tile(x,y+1).value()
+                ){
                     return true;
                 }
             }
@@ -155,13 +157,54 @@ public class Model {
      *    value, then the leading two tiles in the direction of motion merge,
      *    and the trailing tile does not.
      */
+
     public void moveTileUpAsFarAsPossible(int x, int y) {
         Tile currTile = board.tile(x, y);
         int myValue = currTile.value();
         int targetY = y;
-
         // TODO: Tasks 5, 6, and 10. Fill in this function.
+        while (targetY != size()-1 && tile(x,targetY+1) == null) {
+            targetY += 1;
+        }
+        if (targetY < size()-1) {
+            Tile next = board.tile(x,targetY+1);
+            if (next.value() == myValue && !next.wasMerged()) {
+                board.move(x, targetY+1, currTile);
+                score += 2*myValue;
+                return;
+            }
+        }
+        if(targetY != y){
+            board.move(x, targetY, currTile);
+        }
+
     }
+        /*
+        incorrect version:
+        public void moveTileUpAsFarAsPossible(int x, int y) {
+            Tile currTile = board.tile(x, y);
+            int myValue = currTile.value();
+            int targetY = y;
+            for(int c = y+1;c < size();c++){
+                Tile next = tile(x,c);
+                if(next == null){
+                    targetY = c;
+                }else if(next.value() == currTile.value() && !currTile.wasMerged()){
+                    targetY = c;
+                    break;
+                }else {
+                    break;
+                }
+            }
+            if(targetY != y){
+                board.move(x,targetY,currTile);
+                if(board.tile(x,targetY).value() == 2*myValue){
+                    score += 2*myValue;
+                }
+            }
+        }
+        */
+
 
     /** Handles the movements of the tilt in column x of the board
      * by moving every tile in the column as far up as possible.
@@ -170,10 +213,22 @@ public class Model {
      * */
     public void tiltColumn(int x) {
         // TODO: Task 7. Fill in this function.
+        for(int i = size()-2;i >= 0;i--){
+            if(board.tile(x,i) == null || board.tile(x,i).wasMerged()){
+                continue;//IDE sucks
+            }else{
+                moveTileUpAsFarAsPossible(x,i);
+            }
+        }
     }
 
     public void tilt(Side side) {
         // TODO: Tasks 8 and 9. Fill in this function.
+        board.setViewingPerspective(side);
+        for(int i = size()-1;i >= 0;i--){
+            tiltColumn(i);
+        }
+        board.setViewingPerspective(Side.NORTH);
     }
 
     /** Tilts every column of the board toward SIDE.
