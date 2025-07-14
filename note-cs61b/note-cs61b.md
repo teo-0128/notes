@@ -367,7 +367,7 @@ public class IntNode{
     }
 }//IntNode is dumb now,has no methods 
 ```
-↓↓↓can also be nested in SLList(`private static class IntNode{...}`)
+↓↓↓can also be nested in SLList(`private static class IntNode{...}`，IntNode then is only used for the internal implementation of SLList)
 ```java
 public class SLList{
     //use `private` keyword to hide implementation details from users of the class
@@ -410,7 +410,7 @@ L.first.next = new IntNode(999, null);//bypass the addFirst method and directly 
 hide implementation details from users of the class,
 1. less for user of class to understand
 2. safe for you to change private implementation
-3. still nothing to do with protection against hackers,spies and other evil entities
+3. but still nothing to do with protection against hackers,spies and other evil entities
 
 #### more methods for SLList
 
@@ -435,7 +435,7 @@ private int size(IntNode p){
     if(p.next == null){
         return 1;
     }
-    return 1 + size(p.next);
+    return 1 + size(p.next);//recursion
 }
 
 /*
@@ -510,7 +510,7 @@ public class SLList {
   1. faster size() method than would have been convenient for IntList
   2. User of an SLList never sees the IntList class
 - also it's easy to represent the empty list by setting first to null
-- in the above code there's a subtle bug,it crashes then calling addLast on the empty list:
+- in the above code there's a subtle bug,it crashes when calling addLast on the empty list:
     ```java
     public void addLast(int x){
         IntNode p = first;
@@ -581,13 +581,13 @@ public class SLList{
         return size;
     }
 ```
-- an invariant is a condition that is guaranteed to be true during code execution(assuming there are no bugs in the code)
+(an "invariant" is a condition that is guaranteed to be true during code execution(assuming there are no bugs in the code))
 - an SLList with a sentinel node has at least the following invariants:
   1. the sentinel reference always points to the sentinel node
   2. the first node(if exists) is always at sentinel.next
   3. the size variable is always the total number of items that have been added
 - invariants make it easier to reason about code:
-  1. can assume they are true to simplify code(e.g. addLast doesn't need to worry about nulls)
+  1. can assume they are true in order to simplify code(e.g. addLast doesn't need to worry about nulls)
   2. must ensure that methods preserve invariants
 
 ### 5. Lists III
@@ -595,13 +595,15 @@ public class SLList{
 #### Doubly Linked List and Circular Linked List
 
 inserting at the back of an SLList is much slower than the front,how to make them almost fast?
-1. add backwards links from every node
-2. this yields a "doubly linked list" or DLList,as opposed to out earlier "singly linked list" or SLList
+1. 
+- add backwards links from every node
+- this yields a "doubly linked list" or DLList,as opposed to our earlier "singly linked list" or SLList
 
 ![](media/QQ20250708-151934.png)
+2. 
 - arrows point at entire node,not fields
 e.g. last holds the address of the last node,not the item field of the sentinel node
-- last sometimes points at the sentinel,and sometimes points at a "real" node,one solution is having two sentinels,another solution is let last points to sentinel 
+- last sometimes points at the sentinel,and sometimes points at a "real" node,one solution is having two sentinels,another solution is let the  last sentinel point to sentinel 
   
 ![](media/QQ20250708-154440.png)
 
@@ -638,12 +640,12 @@ s2.addFirst("apple");
 
 - arrays are a special kind of object which consists of a numbered sequence of
 memory boxes
-- to get ith item of array A, use A[i]
-- unlike class instances which have have named memory boxes
+- to get i-th item of array A, use A[i]
+- unlike class instances which have named memory boxes
 - arrays consist of:
-  1. a fixed iteger length(can't change)
-  2. a sequence of N memory boxes where N=length,such thay:
-    - all of the boxes hold the same type of value(and have same # of bits)
+  1. a fixed integer length(can't change)
+  2. a sequence of N memory boxes where N=length,such that:
+    - all of the boxes hold the same type of value(and bits)
     - the boxes are numbered 0 through length-1
 - like instances of classes:
   - you get one reference when it's created
@@ -754,4 +756,142 @@ void testAddition() {
 just look at
 [Junit5 架构、新特性及基本使用（常用注解与套件执行） - 知乎](https://zhuanlan.zhihu.com/p/161623597)
 
-### 7. 
+### 7. Lists IV
+
+#### AList
+
+when there are too many elements in a linked list, will the retrieval slow down no matter what,so we should use arrays instead，retrieval from any position of an array is very fast
+
+```java
+public class AList {
+    //basic functions
+    private int[] items;
+    private int size;
+    public AList() {
+        items = new int[100];
+        size = 0;
+    }
+    public void addLast(int x) {
+        items[size] = x;
+        size += 1;
+    }
+    public int getLast() {
+        return items[size - 1];
+    }
+    public int get(int i) {
+        if(i >= item.length) {
+            throw new IllegalArgumentException();
+        }
+        return items[i];
+    }
+    public int size() {
+        return size;
+    }
+}
+```
+
+#### removeLast() and addLast()
+
+1. the position of the next item to be inserted is always size
+2. size is always the number of items in the AList
+3. the last item in the list is always in position size-1
+therefore,when removing the last element in the array,
+```java
+public int removeLast() {
+    int x = item[size - 1];
+    //item[size - 1] = 0;  <-  isn't necessary
+    size -= 1;
+    return x;
+}
+```
+
+if the array is full and can't give more space,we can make a new array
+```java
+//modified addLast
+public void addLast(int x) {
+    if (size == items.length) {
+        int[] a = new int[size + 1];
+        System.arraycopy(items, 0, a, 0, size);
+        items = a;//points to a new array
+    }
+    items[size] = x;
+    size += 1;
+}
+```
+↓↓↓ easier to read,understand,and test
+```java
+//resize the underlying array to the target capacity
+private void resize(int capacity) {
+    int[] a = new int[capacity];
+    System.arraycopy(items, 0, a, 0, size);
+    items = a;
+}
+//insett into the back of the list
+public void addLast(int x) {
+    if (size == items.length) {
+        resize(size + 1);
+    }
+    items[size] = x;
+    size += 1;
+}
+```
+- invoking this method twice requires creating and filling 101+102=203 total memory boxes,which is too slow
+- if calling addLast until size = 1000,roughly 500000 total array memory boxes work(101+102+...+1000)
+- obviously size+1 or size+10 won't change the nature of the curve(O(n^2)):
+  ![](media/QQ20250714-095253.png)
+
+faster addLast():
+```java
+public void addLast(int x) {
+    if (size == items.length) {
+        resize(size * 2);//every time a new array is needed,create double the size(O(n))
+    }
+    items[size] = x;
+    size += 1;
+}
+```
+
+an AList shouldn't only be efficient in time,but also in space
+- can define the "usage ratio" `R = size / items.length;`
+- typical solution:half array when R < 0.25
+
+space efficiency and time efficiency will be studied in the future
+
+#### generic Alists
+
+```java
+public class Alist<Glorp> {
+    private Glorp[] items;
+    private int size;
+    public Alist() {
+      //items = new Glorp[100];  <-  syntax error in java!
+        items = (Glorp[]) new Object[8];//  <-  okay
+        size = 0;
+    }
+    private void resize(int cap) {
+        Glorp[] a = (Glorp[]) new Object[cap];
+        System.arraycopy(items, 0, a, 0, size);
+        items = a;
+    }
+    public Glorp get(int i) {
+        return items[i];
+    }
+    ...
+} 
+```
+
+unlike integer based ALists,we actually want to null out deleted items
+- java only destroy unwanted objects when the last reference has been lost
+- keeping references to unneeded objects is sometimes called "loitering"
+- save memory,don't loiter
+```java
+public Glorp removeLast() {
+    Glorp returnItem = getLast();
+
+    //no more references to it,garbage collector freed up the memory
+    items[size - 1] = null;
+    
+    size -= 1;
+    return returnItem;
+}
+```

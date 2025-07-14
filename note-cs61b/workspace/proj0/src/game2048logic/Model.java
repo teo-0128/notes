@@ -163,13 +163,13 @@ public class Model {
         int myValue = currTile.value();
         int targetY = y;
         // TODO: Tasks 5, 6, and 10. Fill in this function.
-        while (targetY != size()-1 && tile(x,targetY+1) == null) {
+        while(targetY != size()-1 && tile(x,targetY+1) == null){
             targetY += 1;
         }
-        if (targetY < size()-1) {
+        if(targetY < size()-1){
             Tile next = board.tile(x,targetY+1);
-            if (next.value() == myValue && !next.wasMerged()) {
-                board.move(x, targetY+1, currTile);
+            if(next.value() == myValue && !next.wasMerged()){
+                board.move(x,targetY+1, currTile);
                 score += 2*myValue;
                 return;
             }
@@ -177,7 +177,6 @@ public class Model {
         if(targetY != y){
             board.move(x, targetY, currTile);
         }
-
     }
         /*
         incorrect version:
