@@ -169,7 +169,7 @@ Dog.makeNoise();
 some classes are never instantiated
 for example,Math
 ```java
-x = Math.round(5,6);
+double x = Math.round(5,6);
 ```
 
 non-static:
@@ -185,7 +185,7 @@ public void makeNoise(){
 }
 ```
 ```java
-Dog maya = new Dog();
+Dog maya = new Dog(15);
 maya.makeNoise();
 ```
 
@@ -463,7 +463,7 @@ public class SLList{
     }
 
     public int size(){
-        return siez(first);
+        return size(first);
     }
 }
 ```
@@ -527,14 +527,14 @@ public class SLList {
     public void addLast(int x){
         size += 1;
         if(first == null){
-        p = new IntNode(x,null);
+        first = new IntNode(x,null);
         return;
     }
         IntNode p = first;
         while(p.next != null){
             p = p.next;
         }
-        p = new IntNode(x,null);
+        p.next = new IntNode(x,null);
         
     }
     ```
@@ -779,7 +779,7 @@ public class AList {
         return items[size - 1];
     }
     public int get(int i) {
-        if(i >= item.length) {
+        if(i >= items.length) {
             throw new IllegalArgumentException();
         }
         return items[i];
@@ -888,10 +888,140 @@ unlike integer based ALists,we actually want to null out deleted items
 public Glorp removeLast() {
     Glorp returnItem = getLast();
 
-    //no more references to it,garbage collector freed up the memory
+    //no more references,garbage collector works
     items[size - 1] = null;
     
     size -= 1;
     return returnItem;
 }
 ```
+
+### 8. Inheritance I
+
+#### interface and implementation
+
+java allows multiple methods with same name,but different parameters,this is called method "overloading(重载)"
+```java
+public class OneClass {
+    public static String longest(AList<String> list) {
+    ...
+    }
+    public static String longest(SLList<String> list) {
+    ...
+    }
+}
+```
+
+but it looks bad and hard to maintian, won't work for future lists,if creating a QList class,have to make a third method
+
+List is a hypernym of SLList and AList，express this in java is a two-step process:
+1. define a reference type for the hypernym
+2. specify that SLLists and ALists are hyponyms of that type
+
+- use the new keyword `interface` instead of `class` to define a List61B
+- interface is a specification of what a List is able to do,not how to do it:
+```java
+public interface List61B<Blorp> {
+    public void addFirst(Blorp x);
+    public void addLast(Blorp x);
+    public void insert(Blorp x, int position);
+    public Blorp getFirst();
+    public Blorp getLast();
+    public Blorp removeLast();
+    public Blorp get(int i);
+    public int size();
+}
+```
+use the new keyword `implements` to tell java compiler SLList and AList are hyponyms of List61B
+```java
+public interface List61B<Item> {
+    public void addLast(Item y);//no actual code here
+    ...
+}
+```
+if a "subclass(子类)" has a method with the exact same signature as in the "superclass(父类)",the subclass "overrides the method"
+```java
+
+public class AList<Item> implements List61B<Item> {
+    ...
+    public void addLast(Item x) {//ite overrides the List61B's addLast()
+        ...
+    }
+}
+```
+
+we can now adjust this method to work on either kind of list:
+```java
+public static String longest(List61B<String>list) {
+    int maxDex = 0;
+    for(int i = 0; i < list.size(); i +=1) {
+        String longestString = list.get(maxDex);
+        String thisString = list.get(i);
+        if (thisString.length() > longestString.length()) {
+            maxDex = i;
+        }
+    }
+    return list.get(maxDex);
+}
+```
+```java
+public static void main(String args[]) {
+    AList<String> a = new AList<>();
+    a.addLast("egg");
+    a.addLast("cat");
+    longest(a);
+}
+```
+
+difference between override and overload:
+![](media/QQ20250715-031202.png)
+
+- adding `@Overide` before a function makes it easier to read,declares it was overwritten from a superclass
+- the `implements List61B<Item>` is essentially a commitment,AList states it will own and define all the elements and behaviors specified in the List61B interface
+- if List61B defines a method and AList/SLList doesn't realize it,the compiler will report the error 
+
+use the keyword `default` in an interface to provide default implementations:
+```java
+public interface MyList {
+    ...
+    default public void print() {
+        for (int i = 0; i < size(); i += 1) {
+            System.out.print(get(i) + " ");
+        }
+        System.out.println();
+    }
+}
+```
+can be overwritten:
+```java
+public class MyLinkedList implements MyList {
+    ...
+    @Override
+    public void print() {
+        for (Node p = sentinel.next; p != null; p = p. next) {
+            System.out.print(p.item + " ");
+        }
+    }
+}
+```
+
+### static and dynamic type
+
+```java
+public static void main(String[] args) {
+    List61B<String> someList = new SLList<String>();//okay
+    someList.addLast("1");
+    someList.addLast("2");
+    someList.addLast("3");
+    someList.print();//using SLList.print(),not List61B.print(),reason↓↓↓
+}
+```
+- 1. every variable in java has a "compile-time type", a.k.a. "static type"
+  2. this is the type specified at declaration,it never changes
+- variables also have a "run-time type" a.k.a. "dynamic type"
+  1. this is the type specified at instantiation(e.g. when using `new`)
+  2. equal to the type of the object being pointed at
+   
+![](media/QQ20250722-095145.png)
+
+### 9. Inheritance II

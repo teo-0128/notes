@@ -159,7 +159,7 @@ public class Model {
      */
 
     public void moveTileUpAsFarAsPossible(int x, int y) {
-        Tile currTile = board.tile(x, y);
+        Tile currTile = board.tile(x,y);
         int myValue = currTile.value();
         int targetY = y;
         // TODO: Tasks 5, 6, and 10. Fill in this function.
@@ -169,13 +169,13 @@ public class Model {
         if(targetY < size()-1){
             Tile next = board.tile(x,targetY+1);
             if(next.value() == myValue && !next.wasMerged()){
-                board.move(x,targetY+1, currTile);
+                board.move(x,targetY+1,currTile);
                 score += 2*myValue;
                 return;
             }
         }
         if(targetY != y){
-            board.move(x, targetY, currTile);
+            board.move(x,targetY,currTile);
         }
     }
         /*
