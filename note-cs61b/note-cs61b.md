@@ -703,6 +703,8 @@ arrays indices can be computed at runtime,class member variable names can't be c
 
 ### 6. Test
 
+#### Junit
+
 the most natural approach to testing would be to start with an input and expected result
 ```java
 public class TestSort{
@@ -755,6 +757,46 @@ void testAddition() {
 
 just look at
 [Junit5 架构、新特性及基本使用（常用注解与套件执行） - 知乎](https://zhuanlan.zhihu.com/p/161623597)
+
+#### Truth
+
+In CS61B,we use Google's Truth assertions library. We use this library over JUnit assertions for the following reasons:
+- Better failure messages for lists.
+- Easier to read and write tests.
+- Larger assertions library out of the box.
+
+We often write tests using the Arrange-Act-Assert pattern:
+1. Arrange(准备) the test case, such as instantiating the data structure or filling it with elements.
+2. Act(执行) by performing the behavior you want to test.
+3. Assert(断言) the result of the action in (2).
+
+A Truth assertion takes the following format:
+```java
+assertThat(actual).isEqualTo(expected);
+```
+
+To add a message to the assertion, we can instead use:
+```java
+assertWithMessage("actual is not expected")
+    .that(actual)
+    .isEqualTo(expected);
+```
+
+We can use things other than `isEqualTo`, depending on the type of `actual`. For example, if `actual` is a `List`, we could do the following to check its contents without constructing a new `List`:
+```java
+assertThat(actualList)
+    .containsExactly(0, 1, 2, 3)
+    .inOrder();
+```
+
+If we had a `List` or other reference object, we could use:
+```java
+assertThat(actualList)
+    .containsExactlyElementsIn(expected)  // `expected` is a List
+    .inOrder();
+```
+
+Truth has many assertions, including isNull and isNotNull; and isTrue and isFalse for booleans. IntelliJ's autocomplete will often give you suggestions for which assertion you can use.
 
 ### 7. Lists IV
 
@@ -939,7 +981,7 @@ public interface List61B<Item> {
     ...
 }
 ```
-if a "subclass(子类)" has a method with the exact same signature as in the "superclass(父类)",the subclass "overrides the method"
+if a implementing class has a method with the exact same signature as in the interface,the implementing class overrides the method
 ```java
 
 public class AList<Item> implements List61B<Item> {
@@ -976,7 +1018,7 @@ public static void main(String args[]) {
 difference between override and overload:
 ![](media/QQ20250715-031202.png)
 
-- adding `@Overide` before a function makes it easier to read,declares it was overwritten from a superclass
+- adding `@Overide` before a function makes it easier to read,declares it was overwritten from a interface
 - the `implements List61B<Item>` is essentially a commitment,AList states it will own and define all the elements and behaviors specified in the List61B interface
 - if List61B defines a method and AList/SLList doesn't realize it,the compiler will report the error 
 
@@ -992,7 +1034,7 @@ public interface MyList {
     }
 }
 ```
-can be overwritten:
+can be overridden by implementing classes:
 ```java
 public class MyLinkedList implements MyList {
     ...
@@ -1005,11 +1047,11 @@ public class MyLinkedList implements MyList {
 }
 ```
 
-### static and dynamic type
+#### static and dynamic type
 
 ```java
 public static void main(String[] args) {
-    List61B<String> someList = new SLList<String>();//okay
+    List61B<String> someList = new SLList<String>();//is dogA a Dog?yes!
     someList.addLast("1");
     someList.addLast("2");
     someList.addLast("3");
@@ -1018,10 +1060,82 @@ public static void main(String[] args) {
 ```
 - 1. every variable in java has a "compile-time type", a.k.a. "static type"
   2. this is the type specified at declaration,it never changes
-- variables also have a "run-time type" a.k.a. "dynamic type"
+  3. the compoler determines which methods can be called based on static type
+- 1. variables also have a "run-time type" a.k.a. "dynamic type"
   1. this is the type specified at instantiation(e.g. when using `new`)
   2. equal to the type of the object being pointed at
    
 ![](media/QQ20250722-095145.png)
 
 ### 9. Inheritance II
+
+build a RotatingSLList that can perform any SLList operation as well as,and include a rotateRight() method to move back item the front
+example: [1, 2, 3, 4, 5] -> [5, 1, 2, 3, 4]
+
+if you want one class to be a hyponym of another class(instead of an interface),use keyword `extends`:
+```java
+public class RotatingSLList<Item> extends SLList<Item> {
+    public void rotateRight() {
+        Item x = removeLast();
+        addFirst(x);
+    }
+
+    public static void main(String[] args) {
+        RotatingSLList<Integer> rsl = new RotatingSLList<>();//"Integer" in <> can be omitted since java7
+        //creates S-list:[10, 11, 12, 13]
+        rsl.addLast(10);
+        rsl.addLast(11);
+        rsl.addLast(12);
+        rsl.addLast(13);
+
+        //should be:[13, 10, 11, 12]
+        rsl.rotateRight();
+        rsl.print();
+    }
+}
+```
+by `extends` RotatingSLList inherits all members of SLList(instance and static variables,methods,nested classes)except constructors,but members may be private and thus inaccessible
+
+VengefulSLList has an additional method printLostItems(),which prints all deleted items
+```java
+public class VengefulSLList<Item> extends SLList<Item> {
+    SLList<Item> lostItems;
+
+    public VengefulSLList() {
+        //super();  <-  must come first,can be omitted 
+        lostItems = new SLList<>();
+    }
+
+    public VengefulSLList(Item x) {
+        super(x);// <-  must give parameters like x to super(),otherwise default super()
+        lostItems = new SLList<>();
+    }
+
+    public void printLostItems() {
+        lostItems.print();
+    }
+
+    @Override
+    public Item removeLast(Item x) {
+        item x = super.removeLast();
+        lostItems.addLast(x);
+        return x;
+    }
+
+    public static void main(String args) {
+        VengefulSLList<Integer> vsl = new VengefulSLList<>();
+        vsl.addLast(1);
+        vsl.addLast(5);
+        vsl.addLast(10);
+        vsl.addLast(13);//vsl is now:[1, 5, 10, 13]
+        vsl.removeLast();
+        vsl.removeLast();//vsl is now:[1, 5]
+        System.out.print("the fallen are: ");
+        vsl.printLostItems();//the fallen are: 13 10
+    }
+}
+```
+
+VengefulSLList extends SLList,SLList extends Object implicitly
+
+![](media/QQ20250725-073154.png)
