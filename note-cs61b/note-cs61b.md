@@ -61,24 +61,6 @@ result:
 Bark!
 ```
 
-```java
-package test;
-public class Dog{
-    public static void makeNoise(){
-        System.out.println("Bark!");
-    }//can't run directly because no main method
-    public int weightInPounds;
-}
-```
-```java
-package test;
-public class DogLauncher{
-    public static void main(String[] args){
-        Dog.makeNoise();
-    }//calls a method from another class
-}
-```
-
 #### static and non-static methods
 
 classes can not only contain functions/methods,but also data:
@@ -1007,7 +989,7 @@ public static String longest(List61B<String>list) {
 }
 ```
 ```java
-public static void main(String args[]) {
+public static void main(String[] args) {
     AList<String> a = new AList<>();
     a.addLast("egg");
     a.addLast("cat");
@@ -1018,7 +1000,7 @@ public static void main(String args[]) {
 difference between override and overload:
 ![](media/QQ20250715-031202.png)
 
-- adding `@Overide` before a function makes it easier to read,declares it was overwritten from a interface
+- adding `@Override` before a function makes it easier to read,declares it was overwritten from a interface
 - the `implements List61B<Item>` is essentially a commitment,AList states it will own and define all the elements and behaviors specified in the List61B interface
 - if List61B defines a method and AList/SLList doesn't realize it,the compiler will report the error 
 
@@ -1139,3 +1121,158 @@ public class VengefulSLList<Item> extends SLList<Item> {
 VengefulSLList extends SLList,SLList extends Object implicitly
 
 ![](media/QQ20250725-073154.png)
+
+java7 and earlier versions have a fundamental issue:memory boxes(variables) can't contain pointers to functions
+can use an interface instead:
+```java
+public interface IntUnaryFunction {
+    public int apply(int x);
+}
+```
+```java
+public class TenX implements IntUnaryFunction {
+    @Override
+    public int apply(int x) {
+        return 10 * x;
+    }
+}
+```
+```java
+public class HoFDemo {
+    public static int doTwice(IntUnaryFunction f, int x) {
+        return f.apply(f.apply(x));
+    }//it's a higher-order function
+    public static void main(String[] args) {
+        int result = doTwice(new TenX(), 2);
+        /*
+        IntUnaryFunction func = new TenX();
+        //in python:
+        def tenX(x):
+            return 10 * x
+        func = tenX
+        */
+        System.out.println(result);//200,/TexX(Tenn(2)) -> 10*(10*2)=200
+    }
+}
+```
+
+in java8,new types were introduced,now can hold references to methods,without `new` 
+```java
+public class Java8HofDemo {
+    public static int tenX(int x) {
+        return 10*x;
+    }
+    public static int doTwice(Functio<Integer, Integer> f, int x) {
+        return f.apply(f.apply(x));
+    }
+    public static void main(String[] args) {
+        int result = doTwice(Java8HofDemo::tenX, 2);
+        System.out.println(result);
+    }
+}
+```
+
+### 10. Inheritance III
+
+subtype polymorphism:子类型多态性
+polymorphism:provides a single interface to entities of different types
+consider a variable deque of static type Deque:
+- when calling deque.addFirst(),the actual behavior is based on the dynamic type,a.k.a. run-time type
+- java automatically selects the right behaviod using what's sometimes called "dynamic method selection"
+
+write a function max() that returns the max of any array,regardless of type
+```java
+public interface OurComparable {
+    /**
+     * return -1 if less than o
+     * return 0 if equal to o
+     * return 1 if more than o
+     */
+    public int compareTo(Object o);
+}
+```
+```java
+public class Dog implements OurComparable{
+    public String name;
+    private int size;
+    public Dog(String n,int s) {...}
+    public void bark(){System.out.println(name + "says: bark!")};
+
+    @Override
+    public int compareTo(Object o) {
+        Dog otherDog = (Dog) o;
+        if (this.size < otherDog.size) {
+            return -1;
+        } else if (this.size == otherDog.size) {
+            return 0;
+        } else {
+            return 1;
+        }
+        /**
+         * or:
+         * return this.size - otherDog.size;
+         */
+    }
+} 
+```
+```java
+public class Maximizer {
+    public static OurComparable max(OurComparable[] items) {
+        int maxDex = 0;
+        for (int i = 0; i < items.length; i +=1) {
+            int cmp = items[i].compareTo(items[maxDex]);
+            if (cmp > 0) {
+                maxDex = i;
+            }
+        }
+    }
+    return 
+}
+```
+```java
+public static void main(String[] args) {
+    Dog[] dogs = {
+        new Dog("Elyse", 3),
+        new Dog("Sture", 9),
+        new Dog("Benjamin", 15)
+    };
+    Dog maxDog = (Dog) Maximizer.max(dogs);
+    maxDog.bark();//Benjamin says: bark!
+}
+```
+
+better version:
+![](media/QQ20250730-212908.png)
+
+implement a new comparator that compares things by size:
+```java
+import java.util.Comparator;//java standard library
+
+//can be nested in Dog,with `static`
+public class NameComparator implements Comparator<Dog> {
+    @Override
+    public int compare(Dog o1, Dog o2) {
+        return o1.name.compareTo(o2.name);/
+    }
+}
+```
+```java
+public static void man(String[] args) {
+    ...
+    Dog d4 = new Dog("Osiki", 200);
+    Dog d5 = new Dog("Cerebus", 99999);
+    NameComparator nc = new NameComparator();
+    int cmp = nc.compare(d4, d5);
+    if (cmp > 0) {
+        d4.bark();
+    } else {
+        d5.bark();
+    }
+    //Oski comes later in the alphabet
+    //Oski says: bark!
+}
+```
+
+![](media/QQ20250730-230931.png)
+
+### 11. Inheritance IV

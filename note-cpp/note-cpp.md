@@ -79,6 +79,7 @@ int main (int argc,char *argv[]){...}
 argc:arguments count,参数个数
 argv:argument vector，参数值组成的数组
 *argv[]和**argv等价
+argv[0]通常为程序名
 
 例如：
 ```cpp
@@ -418,13 +419,11 @@ array1[0] = array2[0]//correct
 num_array2[] in memory:
 |index|value|address|
 |---|---|---|
-||...|...|
 |4|5|p+16 ~ p+19|
 |3|6|p+12 ~ p+15|
 |2|7|p+8 ~ p+11|
 |1|8|p+4 ~ p+7|
 |0|9|p+0 ~ p+3|
-||...|...|
 
 there's no bounds-checking in C/C++
 
@@ -452,14 +451,12 @@ result:
 mat[][columns] in memory:
 |index|value|address|
 |---|---|---|
-||...|...|
 |[1][2]|16|p+20 ~ p+23|
 |[1][1]|15|p+16 ~ p+19|
 |[1][0]|14|p+12 ~ p+15|
 |[0][2]|13|p+8 ~ p+11|
 |[0][1]|12|p+4 ~ p+7|
 |[0][0]|11|p+0 ~ p+3|
-||...|...|
 
 the value of columns decides when the next row start,so don't omit
 
@@ -476,8 +473,8 @@ value[0] = 1.0f;//error
 
 ```cpp
 char rabbit[16] = {'P', 'e', 't', 'e', 'r'}; // string
-cout << "sizeof(rabbit)=" << sizeo(rabbit) << endl; //array size
-cout << "strlen(rabbit)=" << strle(rabbit) << endl;//#include <cstring>string length
+cout << "sizeof(rabbit)=" << sizeof(rabbit) << endl; //array size
+cout << "strlen(rabbit)=" << strlen(rabbit) << endl;//#include <cstring>string length
 for (int i = 0; i < 16; i++)
 {
     cout << i << ":" << +rabbit[i] << "(" << rabbit[i] << ")" << endl;
@@ -490,7 +487,7 @@ cout << "Pig's good name is(" <<good_pig << ")" << endl;
 ```
 result:
 ```cpp
-sizeof(rabbit)=16//include '\0'
+sizeof(rabbit)=16
 strlen(rabbit)=5//not include '\0'
 0:80(P)//index:ASCII:value
 1:101(e)
@@ -524,14 +521,12 @@ const char32_t[] s3 = U"ABCD";//C++11,UTF-32
 string rabbit in memory:
 |index|value|address|
 |---|---|---|
-||...|...|
 |5|0|rabbit+5|
 |4|'r'|rabbit+4|
 |3|'e'|rabbit+3|
 |2|'t'|rabbit+2|
 |1|'e'|rabbit+1|
 |0|'P'|rabbit+0|
-||...|...|
 
 #### manipulation and examination
 
@@ -550,6 +545,9 @@ char *strcat(char *dest,const char *src);
 compare:
 ```cpp
 int strcmp(const char *lhs,const char *rhs);
+//返回0: 两个字符串完全相同(逐字符相等，包括长度)
+//返回负数:`str1` 在字典序上小于 `str2`(例如："apple" < "banana"，因为 'a' < 'b')
+//返回正数:`str1` 在字典序上大于 `str2`(例如："hello" > "hELLo"，因为 'e' > 'E')
 ```
 
 example:
@@ -618,14 +616,13 @@ stu3[50].born = 2002;
 stu/stu2 in memory:
 |element|value|addresss|
 |---|---|---|
-||...|...|
 |male|1|p+8|
 |bore|2000|p+4~p+7|
 |name|0|p+3|
 |^|0|p+2|
 |^|'u'|p+1|
 |^|'Y'|p+0|
-||...|...|
+
 
 in order to align the data in memory,some empty bytes will be padded
 
@@ -955,7 +952,7 @@ int * i = 1;
 p[i] = 3;
 *(p + i) = 3;
 
-int * p2 = p + i;
+int * p2 = p + i;//p2 points to p+i
 *p2 = 3;
 ```
 avoid being out of bound:
@@ -982,5 +979,52 @@ cout << sizeof(double *) << endl;//4 or 8
 ### allocate memory
 
 #### allocate memory:C style
+
+the address space of a program contains several data segments:
+1. Code/Text:executable code,only read
+2. Data:initialized static variables
+3. BSS:uninitiated static data including variables and constants
+4. Heap(堆):dynamically allocated memory,increasing
+5. Stack(栈):local variables,call stack,decreasing
+
+```c
+int a = 0;
+int b = 0;
+int c = 0;
+//addresses in stack get decreased
+cout << &a << endl;
+cout << &b << endl;
+cout << &c << endl; 
+
+int * p1 = (int*) malloc (4);
+int * p2 = (int*) malloc (4);
+int * p3 = (int*) malloc (4);
+//addresses in heap get increased 
+cout << p1 << endl;
+cout << p2 << endl;
+cout << p3 << endl;
+```
+![](media/17535936165154.jpg)
+
+allocate `size` bytes of uninitiated storage(from heap)
+```c
+//void* malloc(size_t size);
+//allocate 4 bytes and convert the pointer to (int *) explicitly:
+int * p1 = (int*) malloc (4);
+```
+```c
+//void free(void* ptr);
+//the dynamically allocated memory must be deallocated explicitly
+p = (int *) malloc(4 * sizeof(int));
+p = (int *) malloc(8 * sizeof(int));
+free(p);
+```
+```c
+void foo()
+{
+    int* p = (int *) malloc (sizeof(int));
+    return;
+}//memory leak
+```
 
 #### allocate memory:CPP style
