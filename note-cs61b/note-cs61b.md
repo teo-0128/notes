@@ -1196,7 +1196,7 @@ public class Dog implements OurComparable{
     public String name;
     private int size;
     public Dog(String n,int s) {...}
-    public void bark(){System.out.println(name + "says: bark!")};
+    public void bark(){System.out.println(name + "says: bark!");}
 
     @Override
     public int compareTo(Object o) {
@@ -1225,8 +1225,8 @@ public class Maximizer {
                 maxDex = i;
             }
         }
+        return items[maxDex];
     }
-    return 
 }
 ```
 ```java
@@ -1252,12 +1252,12 @@ import java.util.Comparator;//java standard library
 public class NameComparator implements Comparator<Dog> {
     @Override
     public int compare(Dog o1, Dog o2) {
-        return o1.name.compareTo(o2.name);/
+        return o1.name.compareTo(o2.name);
     }
 }
 ```
 ```java
-public static void man(String[] args) {
+public static void main(String[] args) {
     ...
     Dog d4 = new Dog("Osiki", 200);
     Dog d5 = new Dog("Cerebus", 99999);
@@ -1276,3 +1276,231 @@ public static void man(String[] args) {
 ![](media/QQ20250730-230931.png)
 
 ### 11. Inheritance IV
+
+#### ArraySet
+
+build an implementation of a Set called ArraySet
+1. add(value): add the value to the ArraySet if it is not already present
+2. contains(value): checks to see if ArraySet contains the key
+3. size(): returns number of values
+
+basic part:
+```java
+public class ArraySet<T> {
+    private T[] items;
+    private int size;
+
+    public int size() {
+        return size;
+    }
+
+    public ArraySet() {
+        items = (T[]) new Object[100];
+        size = 0;
+    }
+
+    public void add(T x) {
+        if (!contains(x)) {
+            items[size] = x;
+            size += 1;
+        }
+    }
+
+    public boolean contains(T x) {
+        for (int i = 0; i < size; i += 1) {
+            if (items[i].equals(x)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static void main(String[] args) {
+        lec11_inheritance4.ArraySet<Integer> S = new lec11_inheritance5.ArraySet<>();
+        S.add(5);
+        S.add(23);
+        S.add(42);
+        System.out.print(S.contains(42));
+        System.out.print(S.contains(50));
+    }
+}
+```
+
+the enhanced for loop:
+```java
+Set<Integer> aset = new HashSet<>();
+javaset.add(5);
+javaset.add(23);
+javaset.add(42);
+for (int i : aset) {
+    System.out.println(i);
+}//can't be compiled yet
+//it requires interface:Iterable<T>,interator<T> :
+/**
+    public interface Iterable<T> {
+        Iterator<T> iterator();
+    }
+ **
+    public interface Iterator<T> {
+        boolean hasNext();
+        T next();
+    }
+ */
+```
+original code:
+```java
+Set<Integer> aset = new HashSet<>();
+javaset.add(5);
+javaset.add(23);
+javaset.add(42);
+Iterator<Integer> seer = javaset.iterator();
+while (seer.hasNext()) {
+    int x = seer.next();
+    System.out.println(x);
+    /*
+    5
+    23
+    42 
+    */
+}
+```
+how does the code above it make the compiler work in this way?:
+```java
+import java.util.Iterator;
+
+public class ArraySet<T> implements Iterable<T> {
+    private T[] items;
+    private int size;
+
+    public ArraySet() {
+        items = (T[]) new Object[100];
+        size = 0;
+    }
+
+    public void add(T x) {
+        if (!contains(x)) {
+            items[size] = x;
+            size += 1;
+        }
+    }
+
+    public boolean contains(T x) {
+        for (int i = 0; i < size; i += 1) {
+            if (items[i].equals(x)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public Iterator<T> iterator() {
+        return new ArraySetIterator();
+    }
+
+    private class ArraySetIterator implements Iterator<T> {
+        private int wizPos = 0;
+
+        @Override
+        public boolean hasNext() {
+            return wizPos < size;
+        }
+
+        @Override
+        public T next() {
+            return items[wizPos++];
+        }
+    }
+}
+
+```
+
+#### toString() and equals(Object obj)
+
+`String toString()` and `boolean equals(Object obj)`are hyponyms of Object
+
+1. the `toString()` method provides a string representation of an object
+2. e.g. `println` calls `String.valueOf` which calls `toString`
+3. the default `toString()` just prints out the name of the object ,then @ the memory location of where it stores
+   
+```java
+public class ArraySet<T> implements Iterable<T> {
+    ...
+    @Override
+    public String toString() {
+        String x = "(";
+        for (T i : this) {
+            x += i.toString() + " ";//it actually builds a new String,so it's slow
+        }
+        x += ")";
+        return x;
+    }
+}//(5 23 42 )
+```
+↓↓↓quicker way:
+```java
+public class ArraySet<T> implements Iterable<T> {
+    ...
+    @Override
+    public String toString() {
+        StringBuilder x =new StringBuilder();
+        x.append("(");
+        for (T i : this) {
+            x.append(i.toString());
+            x.append(" ");
+        }
+        x.append(")");
+        return x.toString();
+    }
+}//(5 23 42 )
+```
+
+`==` compares the bits,for references,it means referencing the same object
+`equals()` compares the content that reference type points to 
+```java
+public class Object {
+    ...
+    public boolean equals(Object obj) {
+        return (this == obj);
+    }
+}
+```
+↓↓↓rewrite:
+```java
+public class ArraySet<T> implements Iterable {
+    ...
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) { return true; }//can save time
+
+        if (o instanceof ArraySet otherArraySet) {//check if o is an arrayset
+        //↑↑↑ errors will be reported below java16
+            if (this.size != otherArraySet.size) {
+                return false;
+            }
+            for (T i : this) {//check if all my items in the other array set
+                if (!otherArraySet.contains(i)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        //a compatible and reliable way to write(below java16)↓↓↓
+        /*
+            if (o instanceof ArraySet<?>) {
+                ArraySet<?> otherArraySet = (ArraySet<?>) o;
+                if (this.size != otherArraySet.size()) {
+                    return false;
+                }
+                for (T item : this) {
+                    if (!otherArraySet.contains(item)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        */
+        return false;
+    }
+}
+```
