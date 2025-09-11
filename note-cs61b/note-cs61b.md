@@ -1335,10 +1335,11 @@ javaset.add(42);
 for (int i : aset) {
     System.out.println(i);
 }//can't be compiled yet
-//it requires interface:Iterable<T>,interator<T> :
+//foreach can only called by like `int[]arr `and object that implements `java.lang.Iterable<T>`
+//so it requires interface:Iterable<T>,interator<T> :
 /**
     public interface Iterable<T> {
-        Iterator<T> iterator();
+        Iterator<T> iterator();//
     }
  **
     public interface Iterator<T> {
@@ -1504,3 +1505,607 @@ public class ArraySet<T> implements Iterable {
     }
 }
 ```
+
+### 12. Asymptotics I
+
+objective:determine if a sorted array contains any duplicates
+given sorted array A,are there indices i!=j where A[i]=A[j] ?
+(sorting feature: duplicate elements must be adjacent)
+
+```java
+public static boolean dup1(int[] A) {
+    for (int i = 0; i < A.length; i += 1) {
+        for (int j = i + 1; j < A.length; j += 1) {
+            if (A[i] == A[j]) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+public static boolean dup2(int[] A) {
+    for (int i = 0; i < A.length - 1; i += 1) {
+        if (A[i] == A[i + 1]) {
+            return true;
+        }
+    }
+    return false;
+}
+```
+
+![](media/QQ20250817-153455.png)
+
+our goal is to somehow characterize the runtimes of the 2 functions
+
+dup1:
+![](media/QQ20250817-154222.png)
+dup2:
+![](media/QQ20250817-154447.png)
+
+1. fewer operations to do the same work(50015001 and 10000 operations)
+2. algorithm scales better in the worst case(N^2 + 3N +2 and N)
+3. parabolas(N^2) grow faster than lines(N)
+
+given a function like Q(N)=3N^3 + N^2,ignore low orders terms and mulriplicative constants,yield the order of growth of Q(N) is N^3
+
+we used Big Theta Θ to describe the order of growth of a function
+|function R(N)|order of growth|
+|---|---|
+|N^3 + 3N^4|Θ(N^4)|
+|1/N + N^3|Θ(N^3)|
+|1/N + 5|Θ(1)|
+|N·e^N + N|Θ(N·e^N)|
+|40sin(N) + 4N^2|Θ(N^2)|
+|(4N^2 + 3N·ln(N))/2|Θ(N^2)|
+
+![](media/QQ20250817-161956.png)
+![](media/QQ20250817-162055.png)
+
+### 13. Midterm Review
+
+[Lecture 13 - Midterm Review_哔哩哔哩_bilibili](https://www.bilibili.com/video/BV1hJ4m1M7ZA?spm_id_from=333.788.player.switch&vd_source=33952b30ae6467330b98b47ef5fea60f&p=13)
+
+## Data Structures
+
+### 14. Disjoint Sets
+
+#### note
+
+The Disjoint Sets(并查集/不相交的集) data structure has two operations:
+connect(x, y): Connects x and y.
+isConnected(x, y): Returns true if x and y are connected. Connections can be
+transitive, i.e. they don't need to be direct.
+
+example:
+connect(Russia, China)
+connect(Russia, Mongolia)
+isConnected(China, Mongolia)? true
+connect(USA, Canada)
+isConnected(USA, Mongolia)? false
+
+```java
+public interface DisjointSets {
+    void connect(int p, int q);
+    boolean isConnected(int p, int q);
+}
+```
+
+idea1:
+- List of sets of intergers,e.g.[{0,1,2,4},{3,5},{6}]
+- in java:`List<Set<Integer>>`
+- intuitive and terrible idea,overall runtime of Θ(N)
+
+idea2: 
+- list of integers where i-th entry gives set number 
+- ![](media/QQ20250818-024758.png)
+- connect(p, q):change entries that equal id[p] to id[q]
+
+```java
+public class QuickFindDS implements DisjointSets {
+    private int[] id;
+    
+    public QuickFindDS(int N) {
+        id = new int[N];
+        for (int i = 0; i < N; i++) {
+            id[i] = -1;
+        }
+    }
+
+    @Override
+    public boolean isConnected(int p, int q) {
+        return id[p] == id[q];
+    } //Θ(1),very fast
+
+    @Override
+    public void connect(int p, int q) {
+        int pid = id[p];
+        int qid = id[q];
+        for (int i = 0; i < id.length; i++) {
+            if(id[i] == pid) {
+                id[i] = qid;
+            }
+        }
+    }//Θ(N),relatively slow still   
+} 
+```
+
+idea3:
+- assign each item a parent (instead of an id),results in a tree-like shape
+- ![](media/QQ20250818-030641.png)
+- example:connect(5,2)
+  1. find root(5) // returns 3
+  2. find root(2) //return 0
+  3. set root(5)'s value to root(2)
+- ![](media/QQ20250818-154457.png)
+
+```java
+public class QuickUnionDS implements DisjointSets {
+    private int[] parent;
+
+    public QuickUnionDS(int N) {
+        parent = new int[N];
+        for (int i = 0; i < N; i++) {
+            parent[i] = -1;
+        }
+    }
+
+    private int find(int p) {
+        int r = p;
+        while (parent[r] >= 0) {
+            r = parent[r];
+        }
+        return r;
+    }
+
+    @Override
+    public boolean isConnected(int p, int q) {
+        return find(p) == find(q);
+    }
+
+    @Override
+    public void connect(int p, int q) {
+        int i = find(p);
+        int j = find(q);
+        parent[i] = j;
+    }
+}
+/*
+but in the worst case this tree looks like:
+0
+ \
+  1
+   \
+    2
+     \
+      3
+both connect(p,q) and isConnected(p,q) still Θ(N)
+*/
+```
+
+one possible approach is to keep track of the height of every tree
+- link up shorter tree below the larger tree
+- in case of a tie, break tie arbitrarily
+- track the tree's height by counting the total number of items in that tree
+- to make the tree short,always take the smaller tree and hang it under the larger tree
+
+↓↓↓
+
+```java
+/*
+conect(int p, int q) needs to keep track of sizes:
+1. replace -1 with weight for roots(top approach)
+2. create a separate size array(bottom approach)
+*/
+```
+
+![](media/QQ20250818-161600.png)
+![](media/QQ20250818-161649.png)
+
+path compression:
+![](media/QQ20250819-163809.png)
+↓↓↓calling isConnected(15,10)
+![](media/QQ20250819-163839.png)
+↓↓↓ calling isConnected(14,13)
+![](media/QQ20250819-164013.png)
+![](media/QQ20250819-164834.png)
+
+The ideas that made our implementation efficient:Represent sets as connected components (don't ack individual connections).
+1. ListofSetsDS: Store connected components as aList of Sets (slow,complicated).
+2. QuickFindDS: Store connected components asset ids.
+3. QuickUnionDS: Store connected components asparent ids.
+   - WeightedQuickUnionDS: Also track the size of each set, and use size to decide on new tree root.
+     - WeightedQuickUnionWithPathCompressionDS: On calls to connect and isConnected, set parent id to the root for all items seen.
+
+
+Runtimes are given assuming:
+- We have a DisjointSets object of size N.
+- We perform M operations, where an operation is defined as either a call to connected or isConnected.
+
+Implementation|Runtime
+---|---
+ListOfSetsDS|Ο(NM)
+QuickFindDS|Θ(NM)
+QuickUnionDS|Ο(NM)
+WeightedQuickUnionDS|Ο(M·logN)
+WeightedQuickUnionDSWithPathCompression|Ο(M·α(N))
+
+### 15. Asymptotics II
+
+If my function f(n) is ...|Doubling N|Adding 1 to N
+---|---|---
+Θ(1)|Doesn't affect runtime|Doesn't affect runtime
+Θ(logn) (base independent)|Adds 1 to runtime|Affects runtime minimally
+Θ(n)|Doubles runtime|Adds 1 to runtime
+Θ(n^2)|Quadruples runtime|Adds n to runtime
+Θ(2^n) (base dependent)|Squares runtime|Doubles runtime
+
+```java
+public static int f3(int n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return f3(n - 1) + f3(n - 1);
+}
+/*
+
+          4
+       /     \
+    3           3
+   / \         / \
+ 2     2     2     2
+ /\    /\    /\    /\
+1  1  1  1  1  1  1  1 
+
+C(N) = 1 + 2 + 4 + ... + 2^(N - 1)
+2C(N) = 2 + 4 + 8 + ... + 2^N
+(2 - 1)C(N) = C(N) = 2^N - 1
+the order of growth of the runtime of this code is 2^N
+
+*/ 
+``` 
+
+```java
+public static int fib(int n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+/*
+
+        4
+      /   \
+    3       2
+   / \     / \
+  2   1   1   0
+ /\
+1  0
+
+(Fibonacci sequence grows at this rate)
+
+still Θ(2^N)
+*/
+```
+![](media/QQ20250819-195944.png)
+
+binary search:
+```java
+static int binarySearch(String[] sorted, String  x, int lo, int hi) {
+    if (lo > hi) return -1;
+    int m = (lo + hi) / 2;
+    int cmp = x.compareTo(sorted[m]);
+    if (cmp < 0) return binarySearch(sorted, x, lo, m - 1);
+    else if (cmp > 0) return binarySearch(sorted, x, m + 1, hi);
+    else return m;
+}
+//N -> 1/2N -> 1/4N -> ... -> (1/2)^(n-1)
+//log₂N
+```
+
+mergesort:
+- sorting is one of the problems that pops up most often in asymptotic analysis along with matrix multiplication
+- given a list of Comparables,return them in sorted order
+- ![](media/QQ20250820-000829.png)
+- mergesort is a recursive way to sort a list:
+  1. split the list into two parts
+  2. sort the two lists individually
+  3. merge the two lists together
+   
+```java
+static List<Comparable> sort(List<Comparable> x) {
+    List<Comparable> firsthalf = sort(x.sublist(0, x.size() / 2));
+    List<Comparable> secondhalf = sort(x.sublist(x.size() / 2, x.size()));
+    return merge(firsthalf, secondhalf);
+}
+```
+![](media/QQ20250820-001950.png)
+- N² vs. NlogN is an enormous difference.
+- Going from NlogN to N is nice, but not a radical change.
+
+### 16. ADTs,Sets,Maps,BSTs
+
+#### lecture
+
+ADTs,abstruct data types(抽象数据类型):
+ADT only cares about what can be done,not how it is done
+so you can kind of think of it like a more philosophical version of the interface that we saw in java
+
+for example,the Stack ADT supports the following operations:
+- push(int x):push x on top of the stack
+- int pop():remove and return the top item from the stack
+
+Maps(映射):
+Maps are very handy tools for all sorts of tasks. Example: Counting words.
+```java
+//Map<[key], [value]>
+Map<String, Integer> m = new TreeMap<>();
+String[] text = {"sumomo", "mo", "momo", "mo", "momo", "no", "uchi"};
+for (String s : text) {
+    int currentCount = m.getOrDefault(s, 0);
+    m.put(s, currentCount + 1);
+}
+```
+
+BSTs,binary search trees(二叉搜索树):
+we use BST to represent an unordered set of items with no duplicates
+- A tree consists of:
+  1. A set of nodes.
+  2. A set of edges that connect those nodes.
+  3. Constraint: There is exactly one path between any two nodes.
+- In a rooted tree, we call one node the root.
+  1. Every node N except the root has exactly one parent, defined as the first node on the path from N to the root.
+  2. Unlike (most) real trees, the root is usually depicted at the top of the tree.
+  3. A node with no child is called a leaf.
+  4. In a rooted binary tree, every node has either 0, 1, or 2 children (subtrees).
+- A binary search tree is a rooted binary tree with the BST property.
+  - BST Property. For every node X in the tree:
+  1.  Every key in the left subtree is less than X's key.
+  2. Every key in the right subtree is greater than X's key.
+
+```java
+class BST {
+    int key;        
+    BST left;       
+    BST right;      
+    BST(int key) {
+        this.key = key;
+        this.left = null;
+        this.right = null;
+    }
+}
+```
+
+```java
+/*
+if searchKey equals T.key,return
+if searchKey < T.key,search T.left
+if searchKey > T.key,search T.right
+*/
+static BST find(BST T, key sk) {
+    if (T == null) {
+        return null;
+    }
+    if (sk.equals(T.key)) {
+        return T;
+    } else if (sk < T.key) {
+        return find(T.left, sk);
+    } else {
+        return find(T.right, sk);
+    }
+}
+/*
+BST result = find(root, 40);
+if (result != null) {
+    System.out.println("result.key = " + result.key);
+} else {
+    System.out.println("not exist");
+}
+*/
+//Θ(logN)
+```
+insert a new key in BST:
+```java
+static BST insert(BST T, key ik) {
+    if (T == null) {
+        return new BST(ik);
+    }
+    if (ik < T.key) {
+        T.left = insert(T.left, ik);
+    } else if (ik > T.key) {
+        T.right = insert(T.right, ik);
+    }
+    return T;
+}
+/*
+root = insert(root, 123);
+*/
+```
+when deleting from a BST,3 cases:
+1. Deletion key has no children.
+   - just sever the parent's link
+2. Deletion key has one child.
+   - move its parent's pointer to its child
+   - no need to change its pointer
+3. Deletion key has two children.
+   - have to promote its right or left to be the new parent
+   - stick new copy in the parent position
+   - This strategy is sometimes known as "Hibbard deletion".
+   - ![](media/QQ20250826-084330.png)
+     ↓↓↓
+     ![](media/QQ20250826-084358.png)
+
+![](media/QQ20250826-085546.png)
+but what if we wanted to represent a mapping of word counts?:
+![](media/QQ20250826-085646.png)
+
+
+#### lab5 code
+
+[Lab 05 Disjoint Sets | CS自学社区](https://www.learncs.site/docs/curriculum-resource/cs61b/cs61b_ch/labs/lab05#%E7%BB%83%E4%B9%A0unionfind)
+
+![](media/QQ20250819-163809.png)
+↓↓↓calling isConnected(15,10)
+![](media/QQ20250819-163839.png)
+↓↓↓ calling isConnected(14,13)
+![](media/QQ20250819-164013.png)
+
+```java
+public class UnionFind {
+    private int[] parent;
+
+    /* Creates a UnionFind data structure holding N items. Initially, all
+       items are in disjoint sets. */
+    public UnionFind(int N) {
+        parent = new int[N];
+        for (int i = 0; i < N; i++) {
+            parent[i] = -1;
+        }
+    }
+
+    /* Returns the size of the set V belongs to. */
+    public int sizeOf(int v) {
+        int root = find(v);
+        return -parent[root];
+    }
+
+    /* Returns the parent of V. If V is the root of a tree, returns the
+       negative size of the tree for which V is the root. */
+    public int parent(int v) {
+        if (v < 0 || v >= parent.length) {
+            throw new IllegalArgumentException("Invalid vertex: " + v);
+        }
+        return parent[v];
+    }
+
+    /* Returns true if nodes/vertices V1 and V2 are connected. */
+    public boolean connected(int v1, int v2) {
+        return find(v1) == find(v2);
+    }
+
+    /* Returns the root of the set V belongs to. Path-compression is employed
+       allowing for fast search-time. If invalid items are passed into this
+       function, throw an IllegalArgumentException. */
+    public int find(int v) {
+        if (v < 0 || v >= parent.length) {
+            throw new IllegalArgumentException("Invalid vertex: " + v);
+        }
+        int root = v;
+        // Find the root
+        while (parent[root] >= 0) {
+            root = parent[root];
+        }
+        // Path compression: set the parent of all nodes along the path to the root
+        int current = v;
+        while (current != root) {
+            int next = parent[current];
+            parent[current] = root;
+            current = next;
+        }
+        return root;
+    }
+
+    /* Connects two items V1 and V2 together by connecting their respective
+       sets. V1 and V2 can be any element, and a union-by-size heuristic is
+       used. If the sizes of the sets are equal, tie break by connecting V1's
+       root to V2's root. Union-ing an item with itself or items that are
+       already connected should not change the structure. */
+    public void union(int v1, int v2) {
+        int root1 = find(v1);
+        int root2 = find(v2);
+        if (root1 == root2) {
+            return;
+        }
+        int size1 = -parent[root1];
+        int size2 = -parent[root2];
+        if (size1 <= size2) {
+            // Merge root1 into root2
+            parent[root2] -= size1;
+            parent[root1] = root2;
+        } else {
+            // Merge root2 into root1
+            parent[root1] -= size2;
+            parent[root2] = root1;
+        }
+    }
+}
+```
+
+### 17. B-Trees (also 2-3 and 2-3-4 Trees)
+
+height and average depth are important properties of BSTs
+- the depth of a node is how far it is from the root,e.g. depth(g) = 2
+- the height of a tree is the depth of its deepest leaf,e.g. height(T) = 4
+- the average depth of a tree is the average depth of a tree's nodes
+
+BSTs have:
+- worst case Θ(N) height
+- best case Θ(log N) height
+
+```java
+/*
+avoid:
+0
+ \
+  1
+   \
+    2
+*/
+```
+
+in this case,when building trees we should consider randomized BSTs
+if randomly inserting into a tree,the trees end up bushy
+
+if N distinct keys are inserted into a BST
+- the expected average depth is ~ 2lnN,with random inserts the average runtime for contain operation is Θ(log N) 
+- the expected tree height is ~ 4.311lnN,with random inserts the worst case runtime for contains operation is Θ(log N) 
+
+BSTs have great performance if we insert items randomly,performance is Θ(log N) per operation,but we can't always insert out items in a random order,because datas comes in over time,don't have all at once
+
+the key idea is not allowing to make the tree taller,have to overstuff the nodes
+
+![](media/QQ20250911-204428.png)
+
+↓↓↓split the middle-left item(17)
+
+![](media/QQ20250911-210026.png)
+
+this is a logically consistent and not so weird data structure,for example:
+- contains(18)
+  1. 18 > 13,go right
+  2. 18 < 15,compare vs. 17
+  3. 18>17,go right
+
+what if a non-leaf node gets too full?we can split that,after adding too much stuff:
+
+![](media/QQ20250911-211102.png)
+
+so does the root:
+
+![](media/QQ20250911-211413.png)
+
+splitting-trees have perfect balance
+- if we split the root,every node gets pushed down by exactly one level
+- if we split a leaf node or internal node,the height doesn't change
+- their real name: B-trees,B-trees of order L = 3 are also called a 2-3-4 tree or 2-4 tree,2-3-4 refers to the number of children that a node can have
+- B-trees of order L = 2 are also called a 2-3 tree
+
+B-trees are most popular in 2 specific contexts:
+1. small L(L = 2 or 3)
+   - used as a simple balanced search tree
+2. L is very large like thousands
+   - used in practice for databases and filesystems(very large records)
+
+B-trees' 2 nice invariants:
+1. all leaves must be the same distance from the root
+2. a non-leaf node with k items must have exactly k+1 children(so  below tree is not B-tree:)
+
+![](media/QQ20250911-213845.png)
+
+![](media/QQ20250911-215329.png)
+
+runtime for contains:
+- worst case number of nodes to inspect: H+1
+- worst case number of items to inspect per node: L
+- overall runtime: Ο(HL)
+- since H = Θ(log N),overall runtime is Ο(L log N)
+- since L is constant,runtime is therefore Ο(log N) 
