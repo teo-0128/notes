@@ -1561,7 +1561,7 @@ we used Big Theta Θ to describe the order of growth of a function
 ![](media/QQ20250817-161956.png)
 ![](media/QQ20250817-162055.png)
 
-### 13. Midterm Review
+### 13. Midterm 1 Review
 
 [Lecture 13 - Midterm Review_哔哩哔哩_bilibili](https://www.bilibili.com/video/BV1hJ4m1M7ZA?spm_id_from=333.788.player.switch&vd_source=33952b30ae6467330b98b47ef5fea60f&p=13)
 
@@ -1729,6 +1729,98 @@ QuickUnionDS|Ο(NM)
 WeightedQuickUnionDS|Ο(M·logN)
 WeightedQuickUnionDSWithPathCompression|Ο(M·α(N))
 
+#### UnionFind code
+
+[Lab 05 Disjoint Sets | CS自学社区](https://www.learncs.site/docs/curriculum-resource/cs61b/cs61b_ch/labs/lab05#%E7%BB%83%E4%B9%A0unionfind)
+
+![](media/QQ20250819-163809.png)
+↓↓↓calling isConnected(15,10)
+![](media/QQ20250819-163839.png)
+↓↓↓ calling isConnected(14,13)
+![](media/QQ20250819-164013.png)
+
+```java
+public class UnionFind {
+    private int[] parent;
+
+    /* Creates a UnionFind data structure holding N items. Initially, all
+       items are in disjoint sets. */
+    public UnionFind(int N) {
+        parent = new int[N];
+        for (int i = 0; i < N; i++) {
+            parent[i] = -1;
+        }
+    }
+
+    /* Returns the size of the set V belongs to. */
+    public int sizeOf(int v) {
+        int root = find(v);
+        return -parent[root];
+    }
+
+    /* Returns the parent of V. If V is the root of a tree, returns the
+       negative size of the tree for which V is the root. */
+    public int parent(int v) {
+        if (v < 0 || v >= parent.length) {
+            throw new IllegalArgumentException("Invalid vertex: " + v);
+        }
+        return parent[v];
+    }
+
+    /* Returns true if nodes/vertices V1 and V2 are connected. */
+    public boolean connected(int v1, int v2) {
+        return find(v1) == find(v2);
+    }
+
+    /* Returns the root of the set V belongs to. Path-compression is employed
+       allowing for fast search-time. If invalid items are passed into this
+       function, throw an IllegalArgumentException. */
+    public int find(int v) {
+        if (v < 0 || v >= parent.length) {
+            throw new IllegalArgumentException("Invalid vertex: " + v);
+        }
+        int root = v;
+        // Find the root
+        while (parent[root] >= 0) {
+            root = parent[root];
+        }
+        // Path compression: set the parent of all nodes along the path to the root
+        int current = v;
+        while (current != root) {
+            int next = parent[current];
+            parent[current] = root;
+            current = next;
+        }
+        return root;
+    }
+
+    /* Connects two items V1 and V2 together by connecting their respective
+       sets. V1 and V2 can be any element, and a union-by-size heuristic is
+       used. If the sizes of the sets are equal, tie break by connecting V1's
+       root to V2's root. Union-ing an item with itself or items that are
+       already connected should not change the structure. */
+    public void union(int v1, int v2) {
+        int root1 = find(v1);
+        int root2 = find(v2);
+        if (root1 == root2) {
+            return;
+        }
+        int size1 = -parent[root1];
+        int size2 = -parent[root2];
+        if (size1 <= size2) {
+            // Merge root1 into root2
+            parent[root2] -= size1;
+            parent[root1] = root2;
+        } else {
+            // Merge root2 into root1
+            parent[root1] -= size2;
+            parent[root2] = root1;
+        }
+    }
+}
+```
+
+
 ### 15. Asymptotics II
 
 If my function f(n) is ...|Doubling N|Adding 1 to N
@@ -1824,7 +1916,7 @@ static List<Comparable> sort(List<Comparable> x) {
 
 ### 16. ADTs,Sets,Maps,BSTs
 
-#### lecture
+#### note
 
 ADTs,abstruct data types(抽象数据类型):
 ADT only cares about what can be done,not how it is done
@@ -1938,99 +2030,125 @@ when deleting from a BST,3 cases:
 but what if we wanted to represent a mapping of word counts?:
 ![](media/QQ20250826-085646.png)
 
+#### BSTMap code
 
-#### lab5 code
-
-[Lab 05 Disjoint Sets | CS自学社区](https://www.learncs.site/docs/curriculum-resource/cs61b/cs61b_ch/labs/lab05#%E7%BB%83%E4%B9%A0unionfind)
-
-![](media/QQ20250819-163809.png)
-↓↓↓calling isConnected(15,10)
-![](media/QQ20250819-163839.png)
-↓↓↓ calling isConnected(14,13)
-![](media/QQ20250819-164013.png)
+[Lab 06 BSTMap | CS自学社区](https://www.learncs.site/docs/curriculum-resource/cs61b/cs61b_ch/labs/lab06#%E6%9B%B4%E5%A4%9A%E6%9C%AA%E8%AF%84%E5%88%86bstmap-%E7%BB%83%E4%B9%A0)
 
 ```java
-public class UnionFind {
-    private int[] parent;
+import java.util.Iterator;
+import java.util.Set;
 
-    /* Creates a UnionFind data structure holding N items. Initially, all
-       items are in disjoint sets. */
-    public UnionFind(int N) {
-        parent = new int[N];
-        for (int i = 0; i < N; i++) {
-            parent[i] = -1;
+public class BSTMap<K extends Comparable<K>, V> implements Map61B<K, V> {
+    private int size;
+    private BSTNode root;
+
+    private class BSTNode {
+        K key;
+        V value;
+        BSTNode left;
+        BSTNode right;
+        private BSTNode(K key, V value) {
+            this.key = key;
+            this.value = value;
+            this.left = null;
+            this.right = null;
         }
     }
 
-    /* Returns the size of the set V belongs to. */
-    public int sizeOf(int v) {
-        int root = find(v);
-        return -parent[root];
+    public BSTMap() {
+        root = null;
+        size = 0;
     }
 
-    /* Returns the parent of V. If V is the root of a tree, returns the
-       negative size of the tree for which V is the root. */
-    public int parent(int v) {
-        if (v < 0 || v >= parent.length) {
-            throw new IllegalArgumentException("Invalid vertex: " + v);
-        }
-        return parent[v];
+    @Override
+    public void put(K key, V value) {
+        root = put(root, key, value);
     }
 
-    /* Returns true if nodes/vertices V1 and V2 are connected. */
-    public boolean connected(int v1, int v2) {
-        return find(v1) == find(v2);
-    }
-
-    /* Returns the root of the set V belongs to. Path-compression is employed
-       allowing for fast search-time. If invalid items are passed into this
-       function, throw an IllegalArgumentException. */
-    public int find(int v) {
-        if (v < 0 || v >= parent.length) {
-            throw new IllegalArgumentException("Invalid vertex: " + v);
+    private BSTNode put(BSTNode node, K key, V value) {
+        if (node == null) {
+            size++;
+            return new BSTNode(key, value);
         }
-        int root = v;
-        // Find the root
-        while (parent[root] >= 0) {
-            root = parent[root];
-        }
-        // Path compression: set the parent of all nodes along the path to the root
-        int current = v;
-        while (current != root) {
-            int next = parent[current];
-            parent[current] = root;
-            current = next;
-        }
-        return root;
-    }
-
-    /* Connects two items V1 and V2 together by connecting their respective
-       sets. V1 and V2 can be any element, and a union-by-size heuristic is
-       used. If the sizes of the sets are equal, tie break by connecting V1's
-       root to V2's root. Union-ing an item with itself or items that are
-       already connected should not change the structure. */
-    public void union(int v1, int v2) {
-        int root1 = find(v1);
-        int root2 = find(v2);
-        if (root1 == root2) {
-            return;
-        }
-        int size1 = -parent[root1];
-        int size2 = -parent[root2];
-        if (size1 <= size2) {
-            // Merge root1 into root2
-            parent[root2] -= size1;
-            parent[root1] = root2;
+        int cmp = key.compareTo(node.key);
+        if (cmp < 0) {
+            node.left = put(node.left, key, value);
+        } else if (cmp > 0) {
+            node.right = put(node.right, key, value);
         } else {
-            // Merge root2 into root1
-            parent[root1] -= size2;
-            parent[root2] = root1;
+            node.value = value;//already exists
         }
+        return node;
+    }
+
+    @Override
+    public V get(K key) {
+        return get(root, key);
+    }
+
+    private V get(BSTNode node , K key) {
+        if (node == null) {
+            return null;
+        }
+        int cmp = key.compareTo(node.key);
+        if (cmp < 0) {
+            return get(node.left, key);
+        } else if (cmp > 0) {
+            return get(node.right, key);
+        } else {
+            return node.value;
+        }
+    }
+
+    @Override
+    public boolean containsKey(K key) {
+        return containsKey(root, key);
+    }
+
+    private boolean containsKey(BSTNode node, K key) {
+        if (node == null) {
+            return false;
+        }
+        int cmp = key.compareTo(node.key);
+        if (cmp > 0) {
+            return containsKey(node.right, key);
+        } else if (cmp < 0) {
+            return containsKey(node.left, key);
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    public int size() {
+        return size;
+    }
+
+    @Override
+    public void clear() {
+        root = null;
+        size = 0;
+    }
+
+    @Override
+    public Set<K> keySet() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public V remove(K key) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Iterator<K> iterator() {
+        throw new UnsupportedOperationException();
     }
 }
+
 ```
 
-### 17. B-Trees (also 2-3 and 2-3-4 Trees)
+### 17. B-Trees (and 2-3 and 2-3-4 Trees)
 
 height and average depth are important properties of BSTs
 - the depth of a node is how far it is from the root,e.g. depth(g) = 2
@@ -2041,17 +2159,6 @@ BSTs have:
 - worst case Θ(N) height
 - best case Θ(log N) height
 
-```java
-/*
-avoid:
-0
- \
-  1
-   \
-    2
-*/
-```
-
 in this case,when building trees we should consider randomized BSTs
 if randomly inserting into a tree,the trees end up bushy
 
@@ -2059,13 +2166,13 @@ if N distinct keys are inserted into a BST
 - the expected average depth is ~ 2lnN,with random inserts the average runtime for contain operation is Θ(log N) 
 - the expected tree height is ~ 4.311lnN,with random inserts the worst case runtime for contains operation is Θ(log N) 
 
-BSTs have great performance if we insert items randomly,performance is Θ(log N) per operation,but we can't always insert out items in a random order,because datas comes in over time,don't have all at once
+BSTs have great performance if we insert items randomly,performance is Θ(log N) per operation,but we can't always insert out items in a random order,because datas comes in over time,don't have all at once("inserting data one by one" does not equal "inserting randomly in sequence")
 
 the key idea is not allowing to make the tree taller,have to overstuff the nodes
 
 ![](media/QQ20250911-204428.png)
 
-↓↓↓split the middle-left item(17)
+↓↓↓split the middle-left item (17)
 
 ![](media/QQ20250911-210026.png)
 
@@ -2086,7 +2193,7 @@ so does the root:
 splitting-trees have perfect balance
 - if we split the root,every node gets pushed down by exactly one level
 - if we split a leaf node or internal node,the height doesn't change
-- their real name: B-trees,B-trees of order L = 3 are also called a 2-3-4 tree or 2-4 tree,2-3-4 refers to the number of children that a node can have
+- their real name: B-trees,B-trees of order L = 3 are also called a 2-3-4 tree,2-3-4 refers to the number of children that a node can have
 - B-trees of order L = 2 are also called a 2-3 tree
 
 B-trees are most popular in 2 specific contexts:
@@ -2104,8 +2211,87 @@ B-trees' 2 nice invariants:
 ![](media/QQ20250911-215329.png)
 
 runtime for contains:
-- worst case number of nodes to inspect: H+1
+- worst case number of nodes to inspect: H+1 (height+1)
 - worst case number of items to inspect per node: L
 - overall runtime: Ο(HL)
 - since H = Θ(log N),overall runtime is Ο(L log N)
-- since L is constant,runtime is therefore Ο(log N) 
+- since L is constant,runtime is therefore Ο(log N)
+   
+### Red Black Trees
+
+```java
+/*
+1          1                     3          3
+ \          \         2         /          /
+  2          3       / \       1          2
+   \        /       1   3       \        /
+    3      2                     2      1
+*/
+```
+
+given any BST,it's possible to move to a different configuration using "rotation":
+rotateLeft(G):let x be the right child of G,make G the new left child of x
+this operation preservessearch tree property,nochange to semaintics of tree
+
+![](media/QQ20250912-151151.png)
+↓↓↓
+![](media/QQ20250912-151406.png)
+↓↓↓
+![](media/QQ20250912-151429.png)
+
+can think of as temporarily merging G and P,then sending G down and left:
+
+![](media/QQ20250912-151730.png)
+
+rotateRight(P) turns it to the original shape:
+
+![](media/QQ20250912-152036.png) 
+
+another example:
+![](media/QQ20250912-211450.png)
+
+rotating a node right is undefined if that node has no left child,so does rotating a node left if the node has no right child
+
+- now we know:
+  - BSTs: can be balanced using rotating,but we have no algorithm for doing so yet
+  - 2-3 trees: are balanced by construction,no rotations required
+- our goal: 
+  - build a BST that is structurally identical to a 2-3 tree
+  
+create "glue" links with the smaller item off to the left:
+![](media/QQ20250912-214829.png)
+
+a BST with left glue links that represents a 2-3 tree is often called a "Left Leaning Red Black Binary Search Tree" a.k.a. LLRB (左倾红黑二叉搜索树)
+- LLRBs are normal BSTs
+- there is a 1-1 correspondence between an LLRB and an equivalent 2-3 tree
+- the red is just a vonvenient fiction,red links don't do anything special ↓↓↓
+
+![](media/QQ20250912-215056.png)
+![](media/QQ20250912-231024.png)
+
+practice:
+![](media/QQ20250912-231250.png)
+![](media/QQ20250912-231840.png)
+
+we implement an LLRB insert as follows:
+1. insert as usual into a BST
+2. use zero or more rotations to maintain the 1-1 mapping
+3. when performing LLRB operation,pretend like it's a 2-3 tree
+
+![](media/QQ20250912-233257.png)
+![](media/QQ20250912-234048.png)
+![](media/QQ20250912-234121.png)
+![](media/QQ20250912-234601.png)
+![](media/QQ20250912-235642.png)
+
+summary:
+1. when inserting,use a red link
+2. if there's a right leaning "3-node",we have a Left Leaning Violation
+   - rotate left the appropiate node to fix
+3. if there are 2 consecutive left links,we have an Incorrect 4 Node Violation
+   - rotate right the appropriate node to fix
+4. if there are any nodes with 2 red children,we have a Temporary 4 Node
+   - Color flip the node to emulate the split operation
+5. Cascading operations: it is possible that a rotation or flip operation will cause an additional violation that needs fixing
+
+![](media/QQ20250912-235851.png)
